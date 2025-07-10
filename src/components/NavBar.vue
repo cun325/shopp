@@ -1,132 +1,137 @@
 <template>
-  <el-aside class="sidebar">
-    <el-menu
-      default-active="1"
-      class="el-menu-vertical-demo"
-      background-color="rgb(9, 28, 59)"
-      text-color="#fff"
-      :router="true"
-    >
-      <!-- 标题 -->
-      <span class="menu-title">鲜果云销</span>
-      <hr class="menu-hr" />
-
-      <!-- 菜单项 -->
-      <el-menu-item index="/dashboard">
-        <div class="menu-item-content">
-          <i class="el-icon-s-grid"></i>
-          <span>仪表盘</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/product-management">
-        <div class="menu-item-content">
-          <i class="el-icon-document"></i>
-          <span>商品管理</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/order-management">
-        <div class="menu-item-content">
-          <i class="el-icon-shopping-cart-full"></i>
-          <span>订单管理</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/delivery-management">
-        <div class="menu-item-content">
-          <i class="el-icon-truck"></i>
-          <span>发货管理</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/user-management">
-        <div class="menu-item-content">
-          <i class="el-icon-user"></i>
-          <span>用户管理</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/customer-service">
-        <div class="menu-item-content">
-          <i class="el-icon-chat-dot-round"></i>
-          <span>客服系统</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/data-analysis">
-        <div class="menu-item-content">
-          <i class="el-icon-data-analysis"></i>
-          <span>数据分析</span>
-        </div>
-      </el-menu-item>
-
-      <el-menu-item index="/ai-model-management">
-        <div class="menu-item-content">
-          <i class="el-icon-connection"></i>
-          <span>AI模型管理</span>
-        </div>
-      </el-menu-item>
-    </el-menu>
-  </el-aside>
+  <div class="navbar">
+    <div class="navbar-left-bg" :style="{ width: isCollapsed ? '60px' : '200px' }">
+      <div class="navbar-left">
+        <button class="menu-btn" @click="$emit('toggleSidebar')">
+          <span class="menu-icon">&#9776;</span>
+        </button>
+        <transition name="fade">
+          <span v-if="!isCollapsed" class="navbar-title">鲜果云销</span>
+        </transition>
+      </div>
+    </div>
+    <div class="navbar-center">
+      <input class="search-input" type="text" placeholder="搜索商品或者商品ID" />
+    </div>
+    <div class="navbar-right">
+      <span class="icon-btn" title="通知">🔔</span>
+      <span class="icon-btn" title="帮助">❓</span>
+      <span class="avatar">管理员</span>
+    </div>
+  </div>
 </template>
 
 <script>
 export default {
-  name: "Sidebar",
+  name: "NavBar",
+  props: {
+    isCollapsed: {
+      type: Boolean,
+      default: false,
+    },
+  },
 };
 </script>
 
 <style scoped>
-.sidebar {
-  width: 200px;
-  height: 100vh;
-  background-color: rgb(9, 28, 59);
+.navbar {
+  height: 60px;
+  background: #fff;
+  color: #222;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: fixed;
   left: 0;
   top: 0;
-  z-index: 999;
-  overflow-y: auto;
+  right: 0;
+  z-index: 1000;
 }
-
-.el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 100%;
-  min-height: 100%;
-}
-
-.menu-item-content {
+.navbar-left-bg {
+  height: 100%;
+  background: rgb(9, 28, 59);
   display: flex;
-  flex-direction: column;
   align-items: center;
+  transition: width 0.2s;
+}
+.navbar-left {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 16px;
+}
+.menu-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  margin-right: 20px;
+}
+.menu-icon {
+  display: inline-block;
+  vertical-align: middle;
+}
+.navbar-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 2px;
+  transition: opacity 0.2s, width 0.2s;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.navbar-center {
+  flex: 1;
+  display: flex;
   justify-content: center;
-  width: 100%;
 }
-
-.menu-title {
+.search-input {
+  width: 320px;
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid #e0e0e0;
+  padding: 0 18px;
+  font-size: 15px;
+  background: #f7f7f7;
+  outline: none;
+  transition: border 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.search-input:focus {
+  border: 1.5px solid #4fc08d;
+}
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-right: 32px;
+}
+.icon-btn {
+  font-size: 22px;
+  cursor: pointer;
+  margin-right: 6px;
+  color: #666;
+  transition: color 0.2s;
+}
+.icon-btn:hover {
+  color: #4fc08d;
+}
+.avatar {
+  background: #4fc08d;
+  color: #fff;
+  border-radius: 16px;
+  padding: 6px 16px;
+  font-size: 15px;
   font-weight: bold;
-  display: block;
-  text-align: center;
-  width: 100%;
-  color: #fffafa;
-  height: 40px;
-  line-height: 40px;
-  font-size: 18px;
-  user-select: none;
-}
-
-/* 激活状态样式 */
-:deep(.el-menu-item.is-active) {
-  background-color: blue !important;
-  color: white;
-  font-weight: bold;
-}
-
-/* 图标颜色同步变化 */
-:deep(.el-menu-item:hover i),
-:deep(.el-menu-item.is-active i) {
-  color: white;
-}
-.menu-hr {
-  margin-bottom: 0%;
+  margin-left: 8px;
 }
 </style>
