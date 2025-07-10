@@ -1,5 +1,5 @@
 <template>
-  <div>这里是发货管理页面</div>
+  <div>大模型管理地区</div>
 </template>
 
 <script setup></script>
