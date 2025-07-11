@@ -1,7 +1,11 @@
 <!-- views/Index.vue -->
 <template>
   <div class="index-container">
-    <NavBar :is-collapsed="isCollapsed" @toggleSidebar="toggleSidebar" />
+    <Navbar
+      :is-collapsed="isCollapsed"
+      :title="pageTitle"
+      @toggleSidebar="toggleSidebar"
+    />
     <div class="main-content">
       <SideBar :is-collapsed="isCollapsed" class="sidebar-fixed" />
       <div class="page-content" :class="{ collapsed: isCollapsed }">
@@ -12,30 +16,36 @@
   </div>
 </template>
 
-<script>
-import NavBar from "@/components/NavBar.vue";
-import SideBar from "@/components/SideBar.vue";
+<script setup>
 import { ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import Navbar from "@/components/Navbar.vue";
+import SideBar from "@/components/SideBar.vue";
 
-export default {
-  name: "Index",
-  components: {
-    NavBar,
-    SideBar,
-  },
-  setup() {
-    const isCollapsed = ref(false);
-    const toggleSidebar = () => {
-      isCollapsed.value = !isCollapsed.value;
-    };
-    // 监听isCollapsed变化，调试用
-    watch(isCollapsed, (val) => {
-      // 可以在这里做调试输出
-      // console.log('Sidebar collapsed:', val);
-    });
-    return { isCollapsed, toggleSidebar };
-  },
+const isCollapsed = ref(false);
+function toggleSidebar() {
+  isCollapsed.value = !isCollapsed.value;
+}
+
+const route = useRoute();
+const pageTitle = ref("");
+const titleMap = {
+  "/index/dashboard": "仪表盘",
+  "/index/product-management": "商品管理",
+  "/index/order-management": "订单管理",
+  "/index/delivery-management": "发货管理",
+  "/index/user-management": "用户管理",
+  "/index/customer-service": "客服系统",
+  "/index/data-analysis": "数据分析",
+  "/index/ai-model-management": "AI模型管理",
 };
+watch(
+  () => route.path,
+  (path) => {
+    pageTitle.value = titleMap[path] || "";
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>

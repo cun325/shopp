@@ -5,13 +5,18 @@
         <button class="menu-btn" @click="$emit('toggleSidebar')">
           <span class="menu-icon">&#9776;</span>
         </button>
-        <transition name="fade">
-          <span v-if="!isCollapsed" class="navbar-title">鲜果云销</span>
-        </transition>
+        <span v-if="!isCollapsed" class="navbar-title">鲜果云销</span>
       </div>
     </div>
     <div class="navbar-center">
-      <input class="search-input" type="text" placeholder="搜索商品或者商品ID" />
+      <span class="navbar-page-title">{{ title }}</span>
+      <input
+        class="navbar-search"
+        type="text"
+        :placeholder="searchPlaceholder"
+        v-model="searchValue"
+        @input="$emit('search', searchValue)"
+      />
     </div>
     <div class="navbar-right">
       <span class="icon-btn" title="通知">🔔</span>
@@ -29,6 +34,19 @@ export default {
       type: Boolean,
       default: false,
     },
+    title: {
+      type: String,
+      default: "",
+    },
+    searchPlaceholder: {
+      type: String,
+      default: "搜索商品或者商品ID",
+    },
+  },
+  data() {
+    return {
+      searchValue: "",
+    };
   },
 };
 </script>
@@ -52,49 +70,66 @@ export default {
 .navbar-left-bg {
   height: 100%;
   background: rgb(9, 28, 59);
-  display: flex;
-  align-items: center;
   transition: width 0.2s;
-}
-.navbar-left {
+  /* width 由 :style 控制 */
   display: flex;
   align-items: center;
-  height: 100%;
-  padding-left: 16px;
+  /* 不要加 padding-left，避免撑开 */
+  box-sizing: border-box;
 }
+
+.navbar-left {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding-left: 12px; /* 控制按钮和左侧距离 */
+}
+
 .menu-btn {
   background: none;
   border: none;
   color: #fff;
   font-size: 28px;
   cursor: pointer;
-  margin-right: 20px;
+  margin-right: 12px; /* 控制按钮和文字间距 */
 }
-.menu-icon {
-  display: inline-block;
-  vertical-align: middle;
-}
+
 .navbar-title {
   font-size: 22px;
   font-weight: bold;
   color: #fff;
   letter-spacing: 2px;
-  transition: opacity 0.2s, width 0.2s;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  /* 不要加 min-width、display:block、padding-left */
 }
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+
+@media (max-width: 600px) {
+  .navbar-title {
+    font-size: 16px;
+    max-width: 70px;
+  }
 }
 .navbar-center {
   flex: 1;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 24px;
 }
-.search-input {
+.navbar-page-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #222;
+  min-width: 120px;
+  margin-right: 50%;
+}
+.navbar-search {
   width: 320px;
   height: 36px;
   border-radius: 18px;
@@ -106,7 +141,7 @@ export default {
   transition: border 0.2s;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
-.search-input:focus {
+.navbar-search:focus {
   border: 1.5px solid #4fc08d;
 }
 .navbar-right {
