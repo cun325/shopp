@@ -3,9 +3,14 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <h2>NLP模型训练管理</h2>
-      <el-button type="primary" @click="showCreateDialog = true">
-        <i class="el-icon-plus"></i> 创建训练任务
-      </el-button>
+      <div>
+        <el-button type="primary" @click="showCreateDialog = true">
+          <i class="el-icon-plus"></i> 创建训练任务
+        </el-button>
+        <el-button type="success" @click="showDatasetDialog = true" style="margin-left: 10px;">
+          <i class="el-icon-folder"></i> 数据集管理
+        </el-button>
+      </div>
     </div>
 
     <!-- 统计卡片 -->
@@ -66,11 +71,11 @@
         <el-form-item label="模型类型">
           <el-select v-model="searchForm.modelType" placeholder="选择模型类型" clearable style="width: 200px">
             <el-option label="全部" value=""></el-option>
-            <el-option 
-              v-for="type in modelTypes" 
-              :key="type.id" 
-              :label="type.name" 
-              :value="type.id">
+            <el-option
+                v-for="type in modelTypes"
+                :key="type.id"
+                :label="type.name"
+                :value="type.id">
             </el-option>
           </el-select>
         </el-form-item>
@@ -83,78 +88,78 @@
 
     <!-- 训练任务列表 -->
     <el-card class="table-card">
-      <el-table 
-        :data="trainingTasks" 
-        v-loading="loading" 
-        style="width: 100%"
-        @row-click="viewTaskDetail">
+      <el-table
+          :data="trainingTasks"
+          v-loading="loading"
+          style="width: 100%"
+          @row-click="viewTaskDetail">
         <el-table-column prop="id" label="ID" width="80"></el-table-column>
         <el-table-column prop="name" label="任务名称" min-width="200"></el-table-column>
         <el-table-column prop="modelType" label="模型类型" width="150">
-          <template slot-scope="scope">
+          <template #default="scope">
             <el-tag size="small">{{ getModelTypeName(scope.row.modelType) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="120">
-          <template slot-scope="scope">
-            <el-tag 
-              :type="getStatusType(scope.row.status)" 
-              size="small">
+          <template #default="scope">
+            <el-tag
+                :type="getStatusType(scope.row.status)"
+                size="small">
               {{ getStatusText(scope.row.status) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="progress" label="进度" width="150">
-          <template slot-scope="scope">
-            <el-progress 
-              :percentage="scope.row.progress || 0" 
-              :status="scope.row.status === 'failed' ? 'exception' : (scope.row.progress === 100 ? 'success' : '')">
+          <template #default="scope">
+            <el-progress
+                :percentage="scope.row.progress || 0"
+                :status="scope.row.status === 'failed' ? 'exception' : (scope.row.progress === 100 ? 'success' : '')">
             </el-progress>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
         <el-table-column prop="estimatedTime" label="预计时长" width="120"></el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
-          <template slot-scope="scope">
-            <el-button 
-              size="mini" 
-              type="primary" 
-              @click.stop="viewTaskDetail(scope.row)">
+          <template #default="scope">
+            <el-button
+                size="mini"
+                type="primary"
+                @click.stop="viewTaskDetail(scope.row)">
               详情
             </el-button>
-            <el-button 
-              v-if="scope.row.status === 'pending'" 
-              size="mini" 
-              type="success" 
-              @click.stop="startTraining(scope.row.id)">
+            <el-button
+                v-if="scope.row.status === 'pending'"
+                size="mini"
+                type="success"
+                @click.stop="startTraining(scope.row.id)">
               开始
             </el-button>
-            <el-button 
-              v-if="scope.row.status === 'training'" 
-              size="mini" 
-              type="warning" 
-              @click.stop="stopTraining(scope.row.id)">
+            <el-button
+                v-if="scope.row.status === 'training'"
+                size="mini"
+                type="warning"
+                @click.stop="stopTraining(scope.row.id)">
               停止
             </el-button>
-            <el-button 
-              v-if="scope.row.status === 'completed'" 
-              size="mini" 
-              type="success" 
-              @click.stop="showEvaluateDialog(scope.row)">
+            <el-button
+                v-if="scope.row.status === 'completed'"
+                size="mini"
+                type="success"
+                @click.stop="showEvaluateDialog(scope.row)">
               评估
             </el-button>
-            <el-button 
-              v-if="scope.row.status === 'completed'" 
-              size="mini" 
-              type="primary" 
-              @click.stop="showDeployDialog(scope.row)">
+            <el-button
+                v-if="scope.row.status === 'completed'"
+                size="mini"
+                type="primary"
+                @click.stop="showDeployDialog(scope.row)">
               部署
             </el-button>
-            <el-button 
-              v-if="scope.row.status === 'completed'" 
-              size="mini" 
-              type="info" 
-              @click.stop="exportModel(scope.row.id)">
+            <el-button
+                v-if="scope.row.status === 'completed'"
+                size="mini"
+                type="info"
+                @click.stop="exportModel(scope.row.id)">
               导出
             </el-button>
           </template>
@@ -164,38 +169,38 @@
       <!-- 分页 -->
       <div class="pagination-wrapper">
         <el-pagination
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="pagination.page"
-          :page-sizes="[10, 20, 50, 100]"
-          :page-size="pagination.size"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="pagination.total">
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="pagination.page"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="pagination.size"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="pagination.total">
         </el-pagination>
       </div>
     </el-card>
 
     <!-- 创建训练任务对话框 -->
-    <el-dialog 
-      title="创建训练任务" 
-      :visible.sync="showCreateDialog" 
-      width="600px" 
-      @close="resetCreateForm">
-      <el-form 
-        :model="createForm" 
-        :rules="createRules" 
-        ref="createForm" 
-        label-width="120px">
+    <el-dialog
+        title="创建训练任务"
+        v-model="showCreateDialog"
+        width="600px"
+        @close="resetCreateForm">
+      <el-form
+          :model="createForm"
+          :rules="createRules"
+          ref="createForm"
+          label-width="120px">
         <el-form-item label="任务名称" prop="name">
           <el-input v-model="createForm.name" placeholder="请输入任务名称"></el-input>
         </el-form-item>
         <el-form-item label="模型类型" prop="modelType">
           <el-select v-model="createForm.modelType" placeholder="选择模型类型" style="width: 100%">
-            <el-option 
-              v-for="type in modelTypes" 
-              :key="type.id" 
-              :label="type.name" 
-              :value="type.id">
+            <el-option
+                v-for="type in modelTypes"
+                :key="type.id"
+                :label="type.name"
+                :value="type.id">
               <span style="float: left">{{ type.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">{{ type.description }}</span>
             </el-option>
@@ -203,15 +208,26 @@
         </el-form-item>
         <el-form-item label="数据集" prop="datasetId">
           <el-select v-model="createForm.datasetId" placeholder="选择数据集" style="width: 100%">
-            <el-option 
-              v-for="dataset in datasets" 
-              :key="dataset.id" 
-              :label="dataset.name" 
-              :value="dataset.id">
+            <el-option
+                v-for="dataset in datasets"
+                :key="dataset.id"
+                :label="dataset.name"
+                :value="dataset.id">
               <span style="float: left">{{ dataset.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">{{ dataset.size }}</span>
             </el-option>
           </el-select>
+          <div v-if="datasets.length === 0" style="margin-top: 10px;">
+            <el-alert
+                title="暂无可用数据集，请先上传数据集"
+                type="warning"
+                show-icon
+                :closable="false">
+              <template #default>
+                <el-button type="primary" size="small" @click="showUploadDialog = true">上传数据集</el-button>
+              </template>
+            </el-alert>
+          </div>
         </el-form-item>
         <el-form-item label="训练轮数" prop="epochs">
           <el-input-number v-model="createForm.epochs" :min="1" :max="100" style="width: 100%"></el-input-number>
@@ -223,27 +239,29 @@
           <el-input-number v-model="createForm.learningRate" :min="0.0001" :max="1" :step="0.0001" :precision="4" style="width: 100%"></el-input-number>
         </el-form-item>
         <el-form-item label="描述">
-          <el-input 
-            type="textarea" 
-            v-model="createForm.description" 
-            placeholder="请输入任务描述" 
-            :rows="3">
+          <el-input
+              type="textarea"
+              v-model="createForm.description"
+              placeholder="请输入任务描述"
+              :rows="3">
           </el-input>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="createTrainingTask" :loading="creating">创建</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showCreateDialog = false">取消</el-button>
+          <el-button type="primary" @click="createTrainingTask" :loading="creating">创建</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- 任务详情对话框 -->
-    <el-dialog 
-      title="训练任务详情" 
-      :visible.sync="showDetailDialog" 
-      width="800px">
+    <el-dialog
+        title="训练任务详情"
+        v-model="showDetailDialog"
+        width="800px">
       <div v-if="currentTask">
-        <el-tabs v-model="activeTab">
+        <el-tabs v-model="activeTab" @tab-change="handleTabChange">
           <!-- 基本信息 -->
           <el-tab-pane label="基本信息" name="basic">
             <el-descriptions :column="2" border>
@@ -272,11 +290,11 @@
               <el-row :gutter="20">
                 <el-col :span="12">
                   <el-card>
-                    <div slot="header">训练进度</div>
-                    <el-progress 
-                      type="circle" 
-                      :percentage="trainingProgress.progress || 0" 
-                      :width="120">
+                    <template #header>训练进度</template>
+                    <el-progress
+                        type="circle"
+                        :percentage="trainingProgress.progress || 0"
+                        :width="120">
                     </el-progress>
                     <p style="margin-top: 10px; text-align: center;">
                       {{ trainingProgress.currentEpoch || 0 }} / {{ trainingProgress.totalEpochs || 0 }} 轮
@@ -285,7 +303,7 @@
                 </el-col>
                 <el-col :span="12">
                   <el-card>
-                    <div slot="header">性能指标</div>
+                    <template #header>性能指标</template>
                     <div class="metrics">
                       <div class="metric-item">
                         <span class="metric-label">当前损失:</span>
@@ -304,182 +322,180 @@
                 </el-col>
               </el-row>
             </div>
+            <div v-else>
+              <el-alert title="暂无训练进度信息" type="info" show-icon></el-alert>
+            </div>
           </el-tab-pane>
 
           <!-- 训练日志 -->
           <el-tab-pane label="训练日志" name="logs">
             <div class="logs-container">
-              <el-button 
-                type="primary" 
-                size="small" 
-                @click="loadTrainingLogs" 
-                style="margin-bottom: 10px;">
-                刷新日志
-              </el-button>
-              <div class="log-content">
-                <div 
-                  v-for="log in trainingLogs" 
-                  :key="log.timestamp" 
-                  class="log-item"
-                  :class="log.level.toLowerCase()">
-                  <span class="log-timestamp">{{ log.timestamp }}</span>
-                  <span class="log-level">{{ log.level }}</span>
-                  <span class="log-message">{{ log.message }}</span>
+              <el-card>
+                <template #header>
+                  <div class="clearfix">
+                    <span>训练日志</span>
+                    <el-button style="float: right; padding: 3px 0" type="text" @click="loadTrainingLogs">刷新</el-button>
+                  </div>
+                </template>
+                <div class="log-content">
+                  <div
+                      v-for="(log, index) in trainingLogs"
+                      :key="index"
+                      :class="['log-item', log.level.toLowerCase()]">
+                    <span class="log-timestamp">[{{ log.timestamp }}]</span>
+                    <span :class="'log-level ' + log.level.toLowerCase()">{{ log.level }}:</span>
+                    <span class="log-message">{{ log.message }}</span>
+                  </div>
                 </div>
-              </div>
+              </el-card>
             </div>
           </el-tab-pane>
 
           <!-- 模型评估 -->
-          <el-tab-pane label="模型评估" name="evaluation" v-if="currentTask && currentTask.status === 'completed'">
-            <div v-if="evaluation">
+          <el-tab-pane label="模型评估" name="evaluation">
+            <div v-if="evaluationResult" class="evaluation-result">
               <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-card>
-                    <div slot="header">评估指标</div>
-                    <div class="evaluation-metrics">
-                      <div class="metric-item">
-                        <span class="metric-label">准确率 (Accuracy):</span>
-                        <span class="metric-value">{{ (evaluation.accuracy * 100).toFixed(2) }}%</span>
-                      </div>
-                      <div class="metric-item">
-                        <span class="metric-label">精确率 (Precision):</span>
-                        <span class="metric-value">{{ (evaluation.precision * 100).toFixed(2) }}%</span>
-                      </div>
-                      <div class="metric-item">
-                        <span class="metric-label">召回率 (Recall):</span>
-                        <span class="metric-value">{{ (evaluation.recall * 100).toFixed(2) }}%</span>
-                      </div>
-                      <div class="metric-item">
-                        <span class="metric-label">F1分数:</span>
-                        <span class="metric-value">{{ (evaluation.f1Score * 100).toFixed(2) }}%</span>
-                      </div>
-                    </div>
-                  </el-card>
+                <el-col :span="8">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ (evaluationResult.accuracy * 100).toFixed(2) }}%</div>
+                    <div class="metric-label">准确率</div>
+                  </div>
                 </el-col>
-                <el-col :span="12">
-                  <el-card>
-                    <div slot="header">混淆矩阵</div>
-                    <div class="confusion-matrix" v-if="evaluation.confusionMatrix">
-                      <table>
-                        <tr v-for="(row, i) in evaluation.confusionMatrix" :key="i">
-                          <td v-for="(cell, j) in row" :key="j">{{ cell }}</td>
-                        </tr>
-                      </table>
-                    </div>
-                  </el-card>
+                <el-col :span="8">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ evaluationResult.totalSamples }}</div>
+                    <div class="metric-label">总样本数</div>
+                  </div>
+                </el-col>
+                <el-col :span="8">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ evaluationResult.correctPredictions }}</div>
+                    <div class="metric-label">正确预测数</div>
+                  </div>
                 </el-col>
               </el-row>
-              <div style="margin-top: 20px; text-align: center;">
-                <el-button type="primary" @click="evaluateModel">重新评估</el-button>
-              </div>
+
+              <el-card class="confusion-matrix" v-if="evaluationResult.confusionMatrix" style="margin-top: 20px;">
+                <template #header>混淆矩阵</template>
+                <el-table :data="formatConfusionMatrix(evaluationResult.confusionMatrix)" style="width: 100%">
+                  <el-table-column prop="actual" label="实际\预测" width="120"></el-table-column>
+                  <el-table-column
+                      v-for="predicted in getUniqueLabels(evaluationResult.confusionMatrix)"
+                      :key="predicted"
+                      :prop="predicted"
+                      :label="predicted">
+                  </el-table-column>
+                </el-table>
+              </el-card>
             </div>
-            <div v-else style="text-align: center; padding: 40px;">
-              <el-button type="primary" @click="evaluateModel">开始评估</el-button>
+            <div v-else>
+              <el-alert title="暂无评估结果" type="info" show-icon></el-alert>
             </div>
           </el-tab-pane>
         </el-tabs>
       </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showDetailDialog = false">关闭</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- 数据集管理对话框 -->
-    <el-dialog 
-      title="数据集管理" 
-      :visible.sync="showDatasetDialog" 
-      width="800px">
+    <el-dialog
+        title="数据集管理"
+        v-model="showDatasetDialog"
+        width="800px">
       <div class="dataset-management">
         <div class="dataset-header">
           <el-button type="primary" @click="showUploadDialog = true">
             <i class="el-icon-upload"></i> 上传数据集
           </el-button>
         </div>
+
         <el-table :data="datasets" style="width: 100%; margin-top: 20px;">
           <el-table-column prop="id" label="ID" width="80"></el-table-column>
-          <el-table-column prop="name" label="数据集名称" min-width="200"></el-table-column>
-          <el-table-column prop="dataType" label="数据类型" width="150">
-            <template slot-scope="scope">
-              <el-tag size="small">{{ scope.row.dataType }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="size" label="数据量" width="120"></el-table-column>
-          <el-table-column prop="uploadTime" label="上传时间" width="180"></el-table-column>
-          <el-table-column prop="status" label="状态" width="100">
-            <template slot-scope="scope">
-              <el-tag 
-                :type="scope.row.status === 'processed' ? 'success' : 'warning'" 
-                size="small">
-                {{ scope.row.status === 'processed' ? '已处理' : '处理中' }}
-              </el-tag>
-            </template>
-          </el-table-column>
+          <el-table-column prop="name" label="数据集名称" min-width="150"></el-table-column>
+          <el-table-column prop="dataType" label="数据类型" width="120"></el-table-column>
+          <el-table-column prop="size" label="大小" width="100"></el-table-column>
+          <el-table-column prop="sampleCount" label="样本数" width="100"></el-table-column>
+          <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
           <el-table-column label="操作" width="150">
-            <template slot-scope="scope">
-              <el-button size="mini" type="primary">预处理</el-button>
-              <el-button size="mini" type="danger">删除</el-button>
+            <template #default="scope">
+              <el-button size="mini" type="primary" @click="preprocessData(scope.row.id)">预处理</el-button>
+              <el-button size="mini" type="danger" @click="deleteDataset(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showDatasetDialog = false">关闭</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- 上传数据集对话框 -->
-    <el-dialog 
-      title="上传数据集" 
-      :visible.sync="showUploadDialog" 
-      width="500px">
+    <el-dialog
+        title="上传数据集"
+        v-model="showUploadDialog"
+        width="500px">
       <el-form :model="uploadForm" :rules="uploadRules" ref="uploadForm" label-width="100px">
         <el-form-item label="数据集名称" prop="name">
           <el-input v-model="uploadForm.name" placeholder="请输入数据集名称"></el-input>
         </el-form-item>
         <el-form-item label="数据类型" prop="dataType">
-          <el-select v-model="uploadForm.dataType" placeholder="选择数据类型" style="width: 100%">
+          <el-select v-model="uploadForm.dataType" placeholder="请选择数据类型" style="width: 100%">
             <el-option label="文本分类" value="text_classification"></el-option>
-            <el-option label="命名实体识别" value="named_entity_recognition"></el-option>
-            <el-option label="文本生成" value="text_generation"></el-option>
-            <el-option label="问答系统" value="question_answering"></el-option>
+            <el-option label="命名实体识别" value="ner"></el-option>
+            <el-option label="情感分析" value="sentiment_analysis"></el-option>
+            <el-option label="问答系统" value="qa"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="描述">
-          <el-input 
-            type="textarea" 
-            v-model="uploadForm.description" 
-            placeholder="请输入数据集描述" 
-            :rows="3">
+          <el-input
+              type="textarea"
+              v-model="uploadForm.description"
+              placeholder="请输入数据集描述"
+              :rows="3">
           </el-input>
         </el-form-item>
-        <el-form-item label="文件" prop="file">
+        <el-form-item label="上传文件">
           <el-upload
-            ref="upload"
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            :file-list="fileList"
-            accept=".csv,.json,.txt"
-            drag>
+              class="upload-demo"
+              drag
+              action="#"
+              :auto-upload="false"
+              :on-change="handleFileChange"
+              :file-list="fileList"
+              accept=".csv,.json,.txt">
             <i class="el-icon-upload"></i>
             <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-            <div class="el-upload__tip" slot="tip">只能上传csv/json/txt文件，且不超过50MB</div>
+            <div class="el-upload__tip">只能上传csv/json/txt文件，且不超过50MB</div>
           </el-upload>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showUploadDialog = false">取消</el-button>
-        <el-button type="primary" @click="uploadDataset" :loading="uploading">上传</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showUploadDialog = false">取消</el-button>
+          <el-button type="primary" @click="uploadDataset" :loading="uploading">上传</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- 模型评估对话框 -->
-    <el-dialog 
-      title="模型评估" 
-      :visible.sync="showEvaluateDialog" 
-      width="600px">
-      <el-form :model="evaluateForm" label-width="120px">
-        <el-form-item label="选择测试数据集">
+    <el-dialog
+        title="模型评估"
+        v-model="showEvaluateDialogVisible"
+        width="500px">
+      <el-form :model="evaluateForm" label-width="100px">
+        <el-form-item label="测试数据集">
           <el-select v-model="evaluateForm.testDatasetId" placeholder="请选择测试数据集" style="width: 100%">
-            <el-option 
-              v-for="dataset in datasets" 
-              :key="dataset.id" 
-              :label="dataset.name" 
-              :value="dataset.id">
+            <el-option
+                v-for="dataset in datasets"
+                :key="dataset.id"
+                :label="dataset.name"
+                :value="dataset.id">
             </el-option>
           </el-select>
         </el-form-item>
@@ -496,7 +512,7 @@
           <el-col :span="8">
             <div class="metric-card">
               <div class="metric-value">{{ evaluationResult.totalSamples }}</div>
-              <div class="metric-label">测试样本数</div>
+              <div class="metric-label">总样本数</div>
             </div>
           </el-col>
           <el-col :span="8">
@@ -507,17 +523,19 @@
           </el-col>
         </el-row>
       </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showEvaluateDialog = false">关闭</el-button>
-        <el-button type="primary" @click="evaluateModel" :loading="evaluating">开始评估</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showEvaluateDialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="evaluateModel" :loading="evaluating">开始评估</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- 模型部署对话框 -->
-    <el-dialog 
-      title="模型部署" 
-      :visible.sync="showDeployDialog" 
-      width="500px">
+    <el-dialog
+        title="模型部署"
+        v-model="showDeployDialogVisible"
+        width="500px">
       <el-form :model="deployForm" label-width="100px">
         <el-form-item label="部署名称">
           <el-input v-model="deployForm.deploymentName" placeholder="请输入部署名称"></el-input>
@@ -537,42 +555,47 @@
         <p><strong>访问端点:</strong> {{ deploymentResult.endpoint }}</p>
         <p><strong>部署时间:</strong> {{ deploymentResult.deploymentTime }}</p>
       </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showDeployDialog = false">关闭</el-button>
-        <el-button type="primary" @click="deployModel" :loading="deploying">开始部署</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showDeployDialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="deployModel" :loading="deploying">开始部署</el-button>
+        </div>
+      </template>
     </el-dialog>
 
-     <!-- 模型导出对话框 -->
-     <el-dialog 
-       title="模型导出" 
-       :visible.sync="exportDialogVisible" 
-       width="500px">
-       <el-form :model="exportForm" label-width="100px">
-         <el-form-item label="导出格式">
-           <el-select v-model="exportForm.format" placeholder="请选择导出格式" style="width: 100%">
-             <el-option label="ONNX" value="onnx"></el-option>
-             <el-option label="TensorFlow" value="tf"></el-option>
-             <el-option label="PyTorch" value="pytorch"></el-option>
-             <el-option label="JSON" value="json"></el-option>
-           </el-select>
-         </el-form-item>
-       </el-form>
-       <div v-if="exportResult" class="export-result">
-         <h4>导出信息</h4>
-         <p><strong>文件名:</strong> {{ exportResult.filename }}</p>
-         <p><strong>格式:</strong> {{ exportResult.format }}</p>
-         <p><strong>文件大小:</strong> {{ formatFileSize(exportResult.size) }}</p>
-         <p><strong>导出时间:</strong> {{ exportResult.exportTime }}</p>
-         <el-button type="success" @click="downloadModel">下载模型</el-button>
-       </div>
-       <div slot="footer" class="dialog-footer">
-         <el-button @click="exportDialogVisible = false">关闭</el-button>
-         <el-button type="primary" @click="exportModel" :loading="exporting">开始导出</el-button>
-       </div>
-     </el-dialog>
-    </div>
-  </template>
+    <!-- 模型导出对话框 -->
+    <el-dialog
+        title="模型导出"
+        v-model="exportDialogVisible"
+        width="500px">
+      <el-form :model="exportForm" label-width="100px">
+        <el-form-item label="导出格式">
+          <el-select v-model="exportForm.format" placeholder="请选择导出格式" style="width: 100%">
+            <el-option label="ONNX" value="onnx"></el-option>
+            <el-option label="TensorFlow" value="tf"></el-option>
+            <el-option label="PyTorch" value="pytorch"></el-option>
+            <el-option label="JSON" value="json"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div v-if="exportResult" class="export-result">
+        <h4>导出信息</h4>
+        <p><strong>文件名:</strong> {{ exportResult.filename }}</p>
+        <p><strong>格式:</strong> {{ exportResult.format }}</p>
+        <p><strong>文件大小:</strong> {{ formatFileSize(exportResult.size) }}</p>
+        <p><strong>导出时间:</strong> {{ exportResult.exportTime }}</p>
+        <el-button type="success" @click="downloadModel">下载模型</el-button>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="exportDialogVisible = false">关闭</el-button>
+          <el-button v-if="!exportResult" type="primary" @click="exportModelWithFormat" :loading="exporting">开始导出</el-button>
+          <el-button v-else type="primary" @click="exportDialogVisible = false">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
 
 <script>
 import { trainingApi } from '@/api/training'
@@ -584,16 +607,16 @@ export default {
       loading: false,
       creating: false,
       uploading: false,
-      
+
       // 统计数据
       statistics: {},
-      
+
       // 搜索表单
       searchForm: {
         status: '',
         modelType: ''
       },
-      
+
       // 训练任务列表
       trainingTasks: [],
       pagination: {
@@ -601,13 +624,13 @@ export default {
         size: 10,
         total: 0
       },
-      
+
       // 模型类型
       modelTypes: [],
-      
+
       // 数据集
       datasets: [],
-      
+
       // 创建任务对话框
       showCreateDialog: false,
       createForm: {
@@ -627,7 +650,7 @@ export default {
         batchSize: [{ required: true, message: '请输入批次大小', trigger: 'blur' }],
         learningRate: [{ required: true, message: '请输入学习率', trigger: 'blur' }]
       },
-      
+
       // 任务详情对话框
       showDetailDialog: false,
       currentTask: null,
@@ -635,7 +658,7 @@ export default {
       trainingProgress: null,
       trainingLogs: [],
       evaluation: null,
-      
+
       // 数据集管理
       showDatasetDialog: false,
       showUploadDialog: false,
@@ -649,38 +672,38 @@ export default {
         dataType: [{ required: true, message: '请选择数据类型', trigger: 'change' }]
       },
       fileList: [],
-      
+
       // 模型评估
-      showEvaluateDialog: false,
+      showEvaluateDialogVisible: false,
       evaluating: false,
       evaluateForm: {
         testDatasetId: null
       },
       evaluationResult: null,
-      
+
       // 模型部署
-       showDeployDialog: false,
-       deploying: false,
-       deployForm: {
-         deploymentName: '',
-         deploymentType: ''
-       },
-       deploymentResult: null,
-       
-       // 模型导出
-       exportDialogVisible: false,
-       exporting: false,
-       exportForm: {
-         format: ''
-       },
-       exportResult: null
+      showDeployDialogVisible: false,
+      deploying: false,
+      deployForm: {
+        deploymentName: '',
+        deploymentType: ''
+      },
+      deploymentResult: null,
+
+      // 模型导出
+      exportDialogVisible: false,
+      exporting: false,
+      exportForm: {
+        format: ''
+      },
+      exportResult: null
     }
   },
-  
+
   created() {
     this.init()
   },
-  
+
   methods: {
     async init() {
       await this.loadStatistics()
@@ -688,7 +711,7 @@ export default {
       await this.loadDatasets()
       await this.loadTrainingTasks()
     },
-    
+
     // 加载统计数据
     async loadStatistics() {
       try {
@@ -700,7 +723,7 @@ export default {
         console.error('加载统计数据失败:', error)
       }
     },
-    
+
     // 加载模型类型
     async loadModelTypes() {
       try {
@@ -712,88 +735,142 @@ export default {
         console.error('加载模型类型失败:', error)
       }
     },
-    
+
     // 加载数据集
     async loadDatasets() {
       try {
         const response = await trainingApi.getDatasets(1, 100)
         if (response.code === 200) {
           this.datasets = response.data.datasets || []
+        } else {
+          this.$message.error(response.message || '获取数据集列表失败')
         }
       } catch (error) {
+        this.$message.error('加载数据集失败: ' + (error.message || '未知错误'))
         console.error('加载数据集失败:', error)
       }
     },
-    
-    // 加载训练任务
-    async loadTrainingTasks() {
-      this.loading = true
-      try {
-        const response = await trainingApi.getTrainingTasks(
-          this.pagination.page,
-          this.pagination.size,
-          this.searchForm.status,
-          this.searchForm.modelType
-        )
-        if (response.code === 200) {
-          this.trainingTasks = response.data.tasks || []
-          this.pagination.total = response.data.total || 0
+
+    // 上传数据集
+    async uploadDataset() {
+      this.$refs.uploadForm.validate(async (valid) => {
+        if (valid && this.fileList.length > 0) {
+          this.uploading = true
+          try {
+            const file = this.fileList[0].raw
+            const response = await trainingApi.uploadDataset(
+                file,
+                this.uploadForm.name,
+                this.uploadForm.description,
+                this.uploadForm.dataType
+            )
+            if (response.code === 200) {
+              this.$message.success('数据集上传成功')
+              this.showUploadDialog = false
+              this.loadDatasets()
+              this.resetUploadForm()
+            } else {
+              this.$message.error(response.message || '数据集上传失败')
+            }
+          } catch (error) {
+            this.$message.error('数据集上传失败: ' + (error.message || '未知错误'))
+            console.error('数据集上传失败:', error)
+          } finally {
+            this.uploading = false
+          }
+        } else {
+          this.$message.warning('请填写完整信息并选择文件')
         }
-      } catch (error) {
-        this.$message.error('加载训练任务失败')
-        console.error('加载训练任务失败:', error)
-      } finally {
-        this.loading = false
+      })
+    },
+
+    // 文件选择处理
+    handleFileChange(file, fileList) {
+      // 限制只能选择一个文件
+      this.fileList = fileList.slice(-1)
+    },
+
+    // 重置上传表单
+    resetUploadForm() {
+      this.$refs.uploadForm && this.$refs.uploadForm.resetFields()
+      this.uploadForm = {
+        name: '',
+        dataType: '',
+        description: ''
       }
+      this.fileList = []
     },
-    
-    // 重置搜索
-    resetSearch() {
-      this.searchForm = {
-        status: '',
-        modelType: ''
+
+    // 获取模型类型名称
+    getModelTypeName(typeId) {
+      const type = this.modelTypes.find(t => t.id === typeId)
+      return type ? type.name : typeId
+    },
+
+    // 获取状态类型
+    getStatusType(status) {
+      const statusMap = {
+        pending: '',
+        training: 'warning',
+        completed: 'success',
+        failed: 'danger',
+        stopped: 'info'
       }
-      this.pagination.page = 1
-      this.loadTrainingTasks()
+      return statusMap[status] || ''
     },
-    
-    // 分页处理
-    handleSizeChange(val) {
-      this.pagination.size = val
-      this.pagination.page = 1
-      this.loadTrainingTasks()
+
+    // 获取状态文本
+    getStatusText(status) {
+      const statusMap = {
+        pending: '待开始',
+        training: '训练中',
+        completed: '已完成',
+        failed: '失败',
+        stopped: '已停止'
+      }
+      return statusMap[status] || status
     },
-    
-    handleCurrentChange(val) {
-      this.pagination.page = val
-      this.loadTrainingTasks()
-    },
-    
+
     // 创建训练任务
     createTrainingTask() {
       this.$refs.createForm.validate(async (valid) => {
         if (valid) {
-          this.creating = true
+          this.creating = true;
           try {
-            const response = await trainingApi.createTrainingTask(this.createForm)
-            if (response.code === 200) {
-              this.$message.success('创建训练任务成功')
-              this.showCreateDialog = false
-              this.loadTrainingTasks()
-              this.loadStatistics()
+            // 检查是否有可用的数据集
+            if (!this.datasets || this.datasets.length === 0) {
+              await this.loadDatasets();
+            }
+
+            // 确保选择了数据集
+            if (!this.createForm.datasetId) {
+              this.$message.warning('请选择数据集');
+              this.creating = false;
+              return;
+            }
+
+            const response = await trainingApi.createTrainingTask(this.createForm);
+            if (response && response.code === 200) {
+              this.$message.success('创建训练任务成功');
+              this.showCreateDialog = false;
+              await this.loadTrainingTasks(); // 确保刷新任务列表
+              this.loadStatistics();
+              this.resetCreateForm();
             } else {
-              this.$message.error(response.message || '创建训练任务失败')
+              this.$message.error(response?.message || '创建训练任务失败');
             }
           } catch (error) {
-            this.$message.error('创建训练任务失败')
-            console.error('创建训练任务失败:', error)
+            this.$message.error('创建训练任务失败: ' + (error.message || '未知错误'));
+            console.error('创建训练任务失败:', error);
           } finally {
-            this.creating = false
+            this.creating = false;
           }
+        } else {
+          this.$message.warning('请填写完整的表单信息');
         }
-      })
+      });
     },
-    
+
     // 重置创建表单
     resetCreateForm() {
       this.$refs.createForm && this.$refs.createForm.resetFields()
@@ -807,226 +884,21 @@ export default {
         description: ''
       }
     },
-    
-    // 查看任务详情
-    async viewTaskDetail(task) {
-      this.currentTask = task
-      this.showDetailDialog = true
-      this.activeTab = 'basic'
-      
-      // 加载任务详情
-      try {
-        const response = await trainingApi.getTrainingTaskDetail(task.id)
-        if (response.code === 200) {
-          this.currentTask = { ...this.currentTask, ...response.data }
-        }
-      } catch (error) {
-        console.error('加载任务详情失败:', error)
-      }
-      
-      // 如果任务正在训练，加载进度
-      if (task.status === 'training') {
-        this.loadTrainingProgress(task.id)
-      }
-    },
-    
-    // 加载训练进度
-    async loadTrainingProgress(taskId) {
-      try {
-        const response = await trainingApi.getTrainingProgress(taskId)
-        if (response.code === 200) {
-          this.trainingProgress = response.data
-        }
-      } catch (error) {
-        console.error('加载训练进度失败:', error)
-      }
-    },
-    
-    // 加载训练日志
-    async loadTrainingLogs() {
-      if (!this.currentTask) return
-      
-      try {
-        const response = await trainingApi.getTrainingLogs(this.currentTask.id, 1, 50)
-        if (response.code === 200) {
-          this.trainingLogs = response.data.logs || []
-        }
-      } catch (error) {
-        console.error('加载训练日志失败:', error)
-      }
-    },
-    
-    // 开始训练
-    async startTraining(taskId) {
-      try {
-        const response = await trainingApi.startTraining(taskId)
-        if (response.code === 200) {
-          this.$message.success('训练任务已开始')
-          this.loadTrainingTasks()
-          this.loadStatistics()
-        } else {
-          this.$message.error(response.message || '启动训练失败')
-        }
-      } catch (error) {
-        this.$message.error('启动训练失败')
-        console.error('启动训练失败:', error)
-      }
-    },
-    
-    // 停止训练
-    async stopTraining(taskId) {
-      this.$confirm('确定要停止这个训练任务吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(async () => {
-        try {
-          const response = await trainingApi.stopTraining(taskId)
-          if (response.code === 200) {
-            this.$message.success('训练任务已停止')
-            this.loadTrainingTasks()
-            this.loadStatistics()
-          } else {
-            this.$message.error(response.message || '停止训练失败')
-          }
-        } catch (error) {
-          this.$message.error('停止训练失败')
-          console.error('停止训练失败:', error)
-        }
-      })
-    },
-    
-    // 评估模型
-    async evaluateModel() {
-      if (!this.currentTask) return
-      
-      try {
-        const response = await trainingApi.evaluateModel(this.currentTask.id, {})
-        if (response.code === 200) {
-          this.evaluation = response.data
-          this.$message.success('模型评估完成')
-        } else {
-          this.$message.error(response.message || '模型评估失败')
-        }
-      } catch (error) {
-        this.$message.error('模型评估失败')
-        console.error('模型评估失败:', error)
-      }
-    },
-    
-    // 导出模型
-    async exportModel(taskId) {
-      try {
-        const response = await trainingApi.exportModel(taskId, { format: 'onnx' })
-        if (response.code === 200) {
-          this.$message.success('模型导出成功')
-        } else {
-          this.$message.error(response.message || '模型导出失败')
-        }
-      } catch (error) {
-        this.$message.error('模型导出失败')
-        console.error('模型导出失败:', error)
-      }
-    },
-    
-    // 上传数据集
-    uploadDataset() {
-      this.$refs.uploadForm.validate(async (valid) => {
-        if (valid && this.fileList.length > 0) {
-          this.uploading = true
-          try {
-            const file = this.fileList[0].raw
-            const response = await trainingApi.uploadDataset(
-              file,
-              this.uploadForm.name,
-              this.uploadForm.description,
-              this.uploadForm.dataType
-            )
-            if (response.code === 200) {
-              this.$message.success('数据集上传成功')
-              this.showUploadDialog = false
-              this.loadDatasets()
-              this.resetUploadForm()
-            } else {
-              this.$message.error(response.message || '数据集上传失败')
-            }
-          } catch (error) {
-            this.$message.error('数据集上传失败')
-            console.error('数据集上传失败:', error)
-          } finally {
-            this.uploading = false
-          }
-        } else {
-          this.$message.error('请填写完整信息并选择文件')
-        }
-      })
-    },
-    
-    // 文件选择处理
-    handleFileChange(file, fileList) {
-      this.fileList = fileList
-    },
-    
-    // 重置上传表单
-    resetUploadForm() {
-      this.$refs.uploadForm && this.$refs.uploadForm.resetFields()
-      this.uploadForm = {
-        name: '',
-        dataType: '',
-        description: ''
-      }
-      this.fileList = []
-    },
-    
-    // 获取模型类型名称
-    getModelTypeName(typeId) {
-      const type = this.modelTypes.find(t => t.id === typeId)
-      return type ? type.name : typeId
-    },
-    
-    // 获取状态类型
-    getStatusType(status) {
-      const statusMap = {
-        pending: '',
-        training: 'warning',
-        completed: 'success',
-        failed: 'danger',
-        stopped: 'info'
-      }
-      return statusMap[status] || ''
-    },
-    
-    // 获取状态文本
-    getStatusText(status) {
-      const statusMap = {
-        pending: '待开始',
-        training: '训练中',
-        completed: '已完成',
-        failed: '失败',
-        stopped: '已停止'
-      }
-      return statusMap[status] || status
-    },
-    
+
     // 显示评估对话框
-    showEvaluateDialog(task) {
+    async showEvaluateDialog(task) {
       this.currentTask = task
-      this.showEvaluateDialog = true
+      this.showEvaluateDialogVisible = true
+      this.evaluateForm.testDatasetId = null
       this.evaluationResult = null
     },
-    
-    // 评估模型
+
     async evaluateModel() {
-      if (!this.evaluateForm.testDatasetId) {
-        this.$message.error('请选择测试数据集')
-        return
-      }
-      
+      if (!this.currentTask) return
+
       this.evaluating = true
       try {
-        const response = await trainingApi.evaluateModel(this.currentTask.id, {
-          testDatasetId: this.evaluateForm.testDatasetId
-        })
+        const response = await trainingApi.evaluateModelWithDataset(this.currentTask.id, this.evaluateForm.testDatasetId)
         if (response.code === 200) {
           this.evaluationResult = response.data
           this.$message.success('模型评估完成')
@@ -1040,91 +912,191 @@ export default {
         this.evaluating = false
       }
     },
-    
+
     // 显示部署对话框
     showDeployDialog(task) {
       this.currentTask = task
-      this.showDeployDialog = true
+      this.showDeployDialogVisible = true
+      this.deployForm = {
+        deploymentName: '',
+        deploymentType: ''
+      }
       this.deploymentResult = null
     },
-    
-    // 部署模型
-     async deployModel() {
-       if (!this.deployForm.deploymentName || !this.deployForm.deploymentType) {
-         this.$message.error('请填写完整的部署信息')
-         return
-       }
-       
-       this.deploying = true
-       try {
-         const response = await trainingApi.deployModel(this.currentTask.id, {
-           deploymentName: this.deployForm.deploymentName,
-           deploymentType: this.deployForm.deploymentType
-         })
-         if (response.code === 200) {
-           this.deploymentResult = response.data
-           this.$message.success('模型部署成功')
-         } else {
-           this.$message.error(response.message || '模型部署失败')
-         }
-       } catch (error) {
-         this.$message.error('模型部署失败')
-         console.error('模型部署失败:', error)
-       } finally {
-         this.deploying = false
-       }
-     },
-     
-     // 显示导出对话框
-     showExportDialog(task) {
-       this.currentTask = task
-       this.exportDialogVisible = true
-       this.exportResult = null
-     },
-     
-     // 导出模型
-     async exportModel() {
-       if (!this.exportForm.format) {
-         this.$message.error('请选择导出格式')
-         return
-       }
-       
-       this.exporting = true
-       try {
-         const response = await trainingApi.exportModel(this.currentTask.id, {
-           format: this.exportForm.format
-         })
-         if (response.code === 200) {
-           this.exportResult = response.data
-           this.$message.success('模型导出成功')
-         } else {
-           this.$message.error(response.message || '模型导出失败')
-         }
-       } catch (error) {
-         this.$message.error('模型导出失败')
-         console.error('模型导出失败:', error)
-       } finally {
-         this.exporting = false
-       }
-     },
-     
-     // 下载模型
-     downloadModel() {
-       if (this.exportResult && this.exportResult.downloadUrl) {
-         window.open(this.exportResult.downloadUrl, '_blank')
-       } else {
-         this.$message.error('下载链接不可用')
-       }
-     },
-     
-     // 格式化文件大小
-     formatFileSize(bytes) {
-       if (bytes === 0) return '0 Bytes'
-       const k = 1024
-       const sizes = ['Bytes', 'KB', 'MB', 'GB']
-       const i = Math.floor(Math.log(bytes) / Math.log(k))
-       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-     }
+
+    // 处理tab切换
+    handleTabChange(tabName) {
+      if (!this.currentTask) return
+
+      switch (tabName) {
+        case 'progress':
+          if (this.currentTask.status === 'training') {
+            this.loadTrainingProgress(this.currentTask.id)
+          }
+          break
+        case 'logs':
+          this.loadTrainingLogs()
+          break
+        case 'evaluation':
+          // 评估数据应该在点击评估按钮时加载，而不是在tab切换时加载
+          break
+      }
+    },
+
+    // 加载训练进度
+    async loadTrainingProgress(taskId) {
+      try {
+        const response = await trainingApi.getTrainingProgress(taskId)
+        if (response.code === 200) {
+          this.trainingProgress = response.data
+        } else {
+          this.$message.error(response.message || '加载训练进度失败')
+        }
+      } catch (error) {
+        console.error('加载训练进度失败:', error)
+        this.$message.error('加载训练进度失败')
+      }
+    },
+
+    // 加载训练日志
+    async loadTrainingLogs() {
+      if (!this.currentTask) return
+
+      try {
+        const response = await trainingApi.getTrainingLogs(this.currentTask.id, 1, 50)
+        if (response.code === 200) {
+          this.trainingLogs = response.data.logs || []
+        } else {
+          this.$message.error(response.message || '加载训练日志失败')
+        }
+      } catch (error) {
+        console.error('加载训练日志失败:', error)
+        this.$message.error('加载训练日志失败')
+      }
+    },
+
+    // 查看任务详情
+    async viewTaskDetail(task) {
+      this.currentTask = task
+      this.showDetailDialog = true
+      this.activeTab = 'basic'
+      this.trainingProgress = null
+      this.trainingLogs = []
+      this.evaluation = null
+
+      // 加载任务详情
+      try {
+        const response = await trainingApi.getTrainingTaskDetail(task.id)
+        if (response.code === 200) {
+          this.currentTask = { ...this.currentTask, ...response.data }
+        }
+      } catch (error) {
+        console.error('加载任务详情失败:', error)
+      }
+
+      // 如果任务正在训练，加载进度
+      if (task.status === 'training') {
+        this.loadTrainingProgress(task.id)
+      }
+    },
+
+    async deployModel() {
+      if (!this.currentTask) return
+
+      this.deploying = true
+      try {
+        const response = await trainingApi.deployModel(this.currentTask.id, this.deployForm)
+        if (response.code === 200) {
+          this.deploymentResult = response.data
+          this.$message.success('模型部署成功')
+        } else {
+          this.$message.error(response.message || '模型部署失败')
+        }
+      } catch (error) {
+        this.$message.error('模型部署失败')
+        console.error('模型部署失败:', error)
+      } finally {
+        this.deploying = false
+      }
+    },
+
+    // 导出模型
+    async exportModel(taskId) {
+      this.currentTask = {id: taskId};  // 保存当前任务ID
+      this.exportDialogVisible = true
+      this.exportForm.format = ''
+      this.exportResult = null
+    },
+
+    async exportModelWithFormat() {
+      if (!this.currentTask) return;
+
+      this.exporting = true;
+      try {
+        const response = await trainingApi.exportModelWithFormat(this.currentTask.id, this.exportForm.format);
+        if (response.code === 200) {
+          this.exportResult = response.data;
+          this.$message.success('模型导出成功');
+        } else {
+          this.$message.error(response.message || '模型导出失败');
+        }
+      } catch (error) {
+        this.$message.error('模型导出失败');
+        console.error('模型导出失败:', error);
+      } finally {
+        this.exporting = false;
+      }
+    },
+
+    async downloadModel() {
+      // 模拟下载功能
+      this.$message.info('开始下载模型文件');
+    },
+
+    formatFileSize(size) {
+      if (size < 1024) {
+        return size + ' B'
+      } else if (size < 1024 * 1024) {
+        return (size / 1024).toFixed(2) + ' KB'
+      } else {
+        return (size / (1024 * 1024)).toFixed(2) + ' MB'
+      }
+    },
+
+    // 格式化混淆矩阵数据
+    formatConfusionMatrix(confusionMatrix) {
+      if (!confusionMatrix) return []
+
+      // 获取所有唯一的标签
+      const labels = this.getUniqueLabels(confusionMatrix)
+
+      // 构建表格数据
+      const tableData = []
+      labels.forEach(actual => {
+        const row = { actual }
+        labels.forEach(predicted => {
+          const key = actual + '_' + predicted
+          row[predicted] = confusionMatrix[key] || 0
+        })
+        tableData.push(row)
+      })
+
+      return tableData
+    },
+
+    // 获取混淆矩阵中的唯一标签
+    getUniqueLabels(confusionMatrix) {
+      if (!confusionMatrix) return []
+
+      const labels = new Set()
+      Object.keys(confusionMatrix).forEach(key => {
+        const [actual, predicted] = key.split('_')
+        labels.add(actual)
+        labels.add(predicted)
+      })
+
+      return Array.from(labels).sort()
+    },
   }
 }
 </script>
@@ -1404,21 +1376,21 @@ export default {
   .model-training {
     padding: 10px;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .stats-cards .el-col {
     margin-bottom: 10px;
   }
-  
+
   .search-form {
     flex-direction: column;
   }
-  
+
   .search-form .el-form-item {
     margin-right: 0;
     margin-bottom: 10px;

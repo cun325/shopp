@@ -1,67 +1,60 @@
 <template>
   <div class="product-management">
-    <!-- 卡片容器 -->
-    <div class="card-container">
-      <!-- 顶部操作区 -->
-      <div class="operation-header">
-        <div class="action-buttons">
-          <el-button type="primary" @click="openAddDialog">新增商品</el-button>
-          <el-button type="danger" :disabled="!selected.length" @click="batchDelete"
-          >批量删除</el-button
-          >
-          <el-button type="warning" :disabled="!selected.length" @click="batchToggleStatus"
-          >批量上下架</el-button
-          >
-          <el-button type="info" :disabled="!selected.length" @click="openFlashSaleDialog"
-          >限时特惠</el-button
-          >
-          <el-button type="primary" :disabled="!selected.length" @click="batchRecommend"
-          >推荐商品</el-button
-          >
-          <el-button type="success" @click="exportExcel">导出Excel</el-button>
-        </div>
-        
-        <div class="search-filter-container">
-          <el-input
-              v-model="search"
-              placeholder="搜索商品名称"
-              clearable
-              @input="handleSearch"
-              style="width: 220px;"
-          />
-          <el-select
-              v-model="filterCategory"
-              placeholder="全部分类"
-              clearable
-              @change="handleSearch"
-              style="width: 140px;"
-          >
-            <el-option label="全部" value="" />
-            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
-          </el-select>
-          <el-select
-              v-model="filterStatus"
-              placeholder="全部状态"
-              clearable
-              @change="handleSearch"
-              style="width: 140px;"
-          >
-            <el-option label="全部" value="" />
-            <el-option label="上架" value="on" />
-            <el-option label="下架" value="off" />
-          </el-select>
-        </div>
-      </div>
-
-      <!-- 商品列表表格 -->
-      <el-table
-          :data="products"
-          style="width: 100%"
-          class="product-table"
-          @selection-change="handleSelectionChange"
+    <!-- 顶部操作区 -->
+    <div class="product-header">
+      <el-button type="primary" @click="openAddDialog">新增商品</el-button>
+      <el-button type="danger" :disabled="!selected.length" @click="batchDelete"
+      >批量删除</el-button
       >
+      <el-button type="warning" :disabled="!selected.length" @click="batchToggleStatus"
+      >批量上下架</el-button
+      >
+      <el-button type="info" :disabled="!selected.length" @click="openFlashSaleDialog"
+      >限时特惠</el-button
+      >
+      <el-button type="primary" :disabled="!selected.length" @click="batchRecommend"
+      >推荐商品</el-button
+      >
+      <el-button type="success" @click="exportExcel">导出Excel</el-button>
+      <el-input
+          v-model="search"
+          placeholder="搜索商品名称"
+          class="search-input"
+          clearable
+          @input="handleSearch"
+      />
+      <el-select
+          v-model="filterCategory"
+          placeholder="全部分类"
+          class="filter-select"
+          clearable
+          @change="handleSearch"
+      >
+        <el-option label="全部" value="" />
+        <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+      </el-select>
+      <el-select
+          v-model="filterStatus"
+          placeholder="全部状态"
+          class="filter-select"
+          clearable
+          @change="handleSearch"
+      >
+        <el-option label="全部" value="" />
+        <el-option label="上架" value="on" />
+        <el-option label="下架" value="off" />
+      </el-select>
+    </div>
+
+    <!-- 商品列表表格 -->
+    <el-table
+        :data="products"
+        style="width: 100%"
+        class="product-table"
+        @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="48" />
-      <el-table-column prop="image" label="图片" width="80">
+      <el-table-column prop="image" label="图片" width="90">
         <template #default="scope">
           <el-image
               :src="processImageUrl(scope.row.image)"
@@ -72,7 +65,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="商品名称" width="180" />
+      <el-table-column prop="name" label="商品名称" min-width="120" />
       <el-table-column prop="category" label="分类" width="100" />
       <el-table-column prop="unit" label="规格" width="100" />
       <el-table-column prop="origin" label="产地" width="100" />
@@ -82,35 +75,49 @@
         </template>
       </el-table-column>
       <el-table-column prop="stock" label="库存" width="80" />
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="status" label="状态" width="90">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
             {{ scope.row.status === 1 ? "上架" : "下架" }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="recommended" label="推荐" width="100">
+      <el-table-column prop="recommended" label="推荐" width="80">
         <template #default="scope">
           <el-tag :type="scope.row.recommended ? 'warning' : 'info'">
             {{ scope.row.recommended ? "推荐" : "普通" }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220">
+      <el-table-column prop="flashSaleActive" label="特惠" width="80">
+        <template #default="scope">
+          <el-tag :type="scope.row.flashSaleActive ? 'danger' : 'info'">
+            {{ scope.row.flashSaleActive ? "特惠" : "正常" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="380">
         <template #default="scope">
           <el-button size="small" @click="openDetailDialog(scope.row)">详情</el-button>
           <el-button size="small" @click="openEditDialog(scope.row)">编辑</el-button>
-          <el-button 
-            size="small" 
-            :type="scope.row.status === 1 ? 'warning' : 'success'"
-            @click="toggleStatus(scope.row)"
+          <el-button size="small" type="danger" @click="deleteProduct(scope.row)"
+          >删除</el-button
           >
-            {{ scope.row.status === 1 ? '下架' : '上架' }}
+          <el-button size="small" type="warning" @click="toggleStatus(scope.row)">
+            {{ scope.row.status === 1 ? "下架" : "上架" }}
           </el-button>
-          <el-button 
-            size="small" 
-            :type="scope.row.recommended ? 'warning' : 'primary'"
-            @click="toggleRecommend(scope.row)"
+          <el-button
+              size="small"
+              type="info"
+              @click="openSingleFlashSaleDialog(scope.row)"
+              :disabled="scope.row.status !== 1"
+          >特惠</el-button
+          >
+          <el-button
+              size="small"
+              type="primary"
+              @click="toggleRecommend(scope.row)"
+              :disabled="scope.row.status !== 1"
           >
             {{ scope.row.recommended ? "取消推荐" : "推荐" }}
           </el-button>
@@ -120,12 +127,13 @@
     <el-pagination
         class="product-pagination"
         background
-        layout="prev, pager, next, jumper, ->, total"
+        layout="total, sizes, prev, pager, next, jumper"
         :total="total"
         :page-size="pageSize"
         :page-sizes="[5, 10, 20, 50]"
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
+        style="margin-top: 18px"
         @current-change="handlePageChange"
         @size-change="handleSizeChange"
     />
@@ -292,7 +300,6 @@
         <el-button type="primary" @click="submitFlashSale">确定</el-button>
       </template>
     </el-dialog>
-    </div>
   </div>
 </template>
 
@@ -957,181 +964,223 @@ const unitOptions = [
 
 <style scoped>
 .product-management {
-  padding: 24px 32px;
+  padding: 24px 32px 32px 32px;
   background: #f7f8fa;
   min-height: 100vh;
 }
-
-/* 卡片容器样式 */
-.card-container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px #e0e0e0;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-/* 顶部操作区 */
-.operation-header {
+.product-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
+  gap: 18px;
+  margin-bottom: 18px;
 }
-
-/* 按钮组样式 */
-.action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+.search-input {
+  width: 220px;
 }
-
-/* 搜索和过滤容器 */
-.search-filter-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+.filter-select {
+  width: 120px;
 }
-
-/* 表格样式优化 */
 .product-table {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-/* 表头样式 */
-:deep(.el-table thead) {
-  background-color: #f5f7fa;
-}
-
-/* 状态标签样式 */
-.status-tag {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.success {
-  background-color: #f0f9eb;
-  color: #67c23a;
-}
-
-.info {
-  background-color: #f4f4f5;
-  color: #909399;
-}
-
-.warning {
-  background-color: #fdf6ec;
-  color: #e6a23c;
-}
-
-/* 商品图片样式 */
-.product-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-/* 分页样式 */
-.product-pagination {
-  margin-top: 24px;
-  text-align: right;
-}
-
-/* 弹窗表单优化 */
-.dialog-form {
-  max-height: 600px;
-  overflow-y: auto;
-  padding-right: 16px;
-}
-
-.dialog-form::-webkit-scrollbar {
-  width: 6px;
-}
-
-.dialog-form::-webkit-scrollbar-thumb {
-  background-color: #e4e4e4;
-  border-radius: 3px;
-}
-
-/* 标签页样式 */
-.tab-container {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 12px #e0e0e0;
-  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-:deep(.el-tabs__item) {
-  font-size: 14px;
+.product-table:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* 表格行悬停效果 */
+:deep(.el-table__row) {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-table__row:hover) {
+  background-color: rgba(79, 192, 141, 0.05) !important;
+  transform: scale(1.01);
+}
+
+/* 表格头部样式优化 */
+:deep(.el-table__header-wrapper) {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+:deep(.el-table th) {
+  background: transparent !important;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* 表格单元格样式 */
+:deep(.el-table td) {
+  border-bottom: 1px solid #f1f3f4;
+  padding: 16px 12px;
+}
+
+/* 状态标签样式优化 */
+:deep(.el-tag) {
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-weight: 500;
+  border: none;
+}
+
+/* 按钮样式优化 */
+:deep(.el-button) {
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 500;
 }
 
-:deep(.el-tabs__nav) {
-  margin-left: 24px;
+:deep(.el-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* 卡片标题 */
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 16px;
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
+  border: none;
 }
 
-/* 数据概览 */
-.summary-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: #f8f9fc;
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.stat-title {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #42b883 0%, #369970 100%);
 }
 
 /* 响应式设计 */
+@media (max-width: 1200px) {
+  .product-table {
+    margin: 0 -12px 24px -12px;
+    border-radius: 0;
+  }
+}
+
 @media (max-width: 768px) {
-  .search-filter-container {
-    flex-direction: column;
-    align-items: flex-start;
+  .product-table {
+    margin: 0 -16px 24px -16px;
+    box-shadow: none;
+    border-radius: 0;
   }
-  
-  .action-buttons {
-    flex-wrap: wrap;
+
+  :deep(.el-table) {
+    font-size: 14px;
   }
+
+  :deep(.el-table th),
+  :deep(.el-table td) {
+    padding: 12px 8px;
+  }
+
+  :deep(.el-button) {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  :deep(.el-tag) {
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  :deep(.el-table th),
+  :deep(.el-table td) {
+    padding: 8px 4px;
+  }
+
+  :deep(.el-button) {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* 隐藏部分列以适应小屏幕 */
+  :deep(.el-table__column--hidden-xs) {
+    display: none;
+  }
+}
+
+/* 加载状态优化 */
+:deep(.el-loading-mask) {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+}
+
+:deep(.el-loading-spinner) {
+  color: #4fc08d;
+}
+
+/* 分页组件样式优化 */
+:deep(.el-pagination) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+:deep(.el-pagination .el-pager li) {
+  border-radius: 8px;
+  margin: 0 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-pagination .el-pager li:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(79, 192, 141, 0.3);
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  :deep(.el-pagination) {
+    margin: 16px -16px 0 -16px;
+    border-radius: 0;
+    padding: 12px;
+  }
+
+  :deep(.el-pagination .el-pagination__total),
+  :deep(.el-pagination .el-pagination__sizes) {
+    display: none;
+  }
+}
+.avatar-uploader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.avatar-uploader .avatar {
+  width: 60px;
+  height: 60px;
+  display: block;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.avatar-uploader-icon {
+  font-size: 24px;
+  color: #c0c4cc;
+  width: 60px;
+  height: 60px;
+  line-height: 60px;
+  text-align: center;
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+}
+.product-pagination {
+  margin-top: 18px;
+  text-align: right;
 }
 </style>
