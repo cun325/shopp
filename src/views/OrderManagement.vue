@@ -2,7 +2,6 @@
   <div class="order-management">
     <!-- 批量操作按钮 -->
     <div class="batch-actions">
-      <el-button type="primary" plain @click="batchShip">批量发货</el-button>
       <el-button type="danger" plain @click="batchRefund">批量退款</el-button>
       <el-button type="danger" plain @click="batchDelete">批量删除</el-button>
       <el-button type="success" @click="exportExcel">导出Excel</el-button>
@@ -360,26 +359,6 @@ async function deleteOrder(row) {
   }
 }
 
-// 批量发货
-async function batchShip() {
-  if (!selected.value.length) {
-    return ElMessage.warning('请选择要发货的订单');
-  }
-  
-  try {
-    await ElMessageBox.confirm(`确定要批量发货选中的 ${selected.value.length} 个订单吗？`, '提示', {
-      type: 'warning'
-    });
-    await request.put('/admin/order/batch-ship', selected.value.map(item => item.id));
-    ElMessage.success('批量发货成功');
-    selected.value = [];
-    fetchOrders();
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('批量发货失败: ' + (error.message || '未知错误'));
-    }
-  }
-}
 
 // 批量退款
 async function batchRefund() {

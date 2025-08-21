@@ -2,7 +2,6 @@
   <div class="delivery-management">
     <!-- 顶部操作区 -->
     <div class="delivery-header">
-      <el-button type="primary" :disabled="!selected.length" @click="batchShip">批量发货</el-button>
       <el-button type="danger" :disabled="!selected.length" @click="batchDelete">批量删除</el-button>
       <el-button type="success" @click="exportExcel">导出Excel</el-button>
       <el-input v-model="search" placeholder="搜索订单号/用户" class="search-input" clearable @input="handleSearch" />
@@ -137,7 +136,6 @@ import {
   getDeliveryOrders, 
   getOrderDetail, 
   shipOrder, 
-  batchShipOrders, 
   deleteOrder as deleteOrderApi, 
   batchDeleteOrders, 
   getExpressCompanies 
@@ -357,37 +355,6 @@ function batchDelete() {
     .catch(() => {});
 }
 
-function batchShip() {
-  if (!selected.value.length) return;
-  
-  const defaultCompany = expressCompanies.value.length > 0 ? expressCompanies.value[0].name : '顺丰速运';
-  
-  ElMessageBox.prompt('请输入快递公司', '批量发货', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputValue: defaultCompany
-  }).then(async ({ value }) => {
-    try {
-      const orderIds = selected.value.map(o => o.id);
-      const batchShipData = {
-        orderIds,
-        expressCompany: value
-      };
-      
-      const response = await batchShipOrders(batchShipData);
-      if (response.code === 200) {
-        ElMessage.success('批量发货成功');
-        selected.value = [];
-        loadOrders(); // 重新加载订单列表
-      } else {
-        ElMessage.error(response.message || '批量发货失败');
-      }
-    } catch (error) {
-      console.error('批量发货失败:', error);
-      ElMessage.error('批量发货失败');
-    }
-  }).catch(() => {});
-}
 
 function handleSearch() {
   currentPage.value = 1;
