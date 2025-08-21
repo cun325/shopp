@@ -292,7 +292,7 @@
         <el-button type="primary" @click="submitFlashSale">确定</el-button>
       </template>
     </el-dialog>
-    
+    </div>
   </div>
 </template>
 
