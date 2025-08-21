@@ -398,4 +398,65 @@ function exportExcel() {
   margin-top: 18px;
   text-align: right;
 }
+
+:deep(.el-pagination) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  
+  --el-pagination-button-width: 32px;
+  --el-pagination-button-height: 32px;
+  --el-pagination-button-margin: 0 4px;
+  
+  .el-pager li {
+    border-radius: 8px;
+    margin: 0 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .el-pager li:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(79, 192, 141, 0.3);
+  }
+  
+  .el-pager li.active {
+    background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
+    color: #fff;
+  }
+  
+  .btn-prev,
+  .btn-next {
+    border-radius: 8px;
+  }
+}
+.avatar-uploader {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.avatar-uploader:hover {
+  border-color: #409eff;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+  object-fit: cover;
+}
 </style>

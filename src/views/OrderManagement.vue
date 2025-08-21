@@ -1,80 +1,64 @@
 <template>
   <div class="order-management">
-    <!-- 批量操作按钮 -->
-    <div class="batch-actions">
+    <!-- 顶部操作区 -->
+    <div class="order-header">
       <el-button type="danger" plain @click="batchRefund">批量退款</el-button>
       <el-button type="danger" plain @click="batchDelete">批量删除</el-button>
       <el-button type="success" @click="exportExcel">导出Excel</el-button>
-    </div>
-
-    <!-- 搜索和过滤 -->
-    <div class="search-filters">
-      <el-input v-model="search" placeholder="搜索订单号/用户" style="width: 300px" clearable @keyup.enter="handleSearch" />
-      <el-select v-model="filterStatus" placeholder="全部状态" style="width: 120px" clearable @change="handleSearch">
+      <el-input v-model="search" placeholder="搜索订单号/用户" class="search-input" clearable @keyup.enter="handleSearch" />
+      <el-select v-model="filterStatus" placeholder="全部状态" class="filter-select" clearable @change="handleSearch">
         <el-option label="待付款" value="pending" />
         <el-option label="待发货" value="to_ship" />
         <el-option label="已发货" value="shipped" />
         <el-option label="已完成" value="completed" />
         <el-option label="已退款" value="refunded" />
       </el-select>
-      <el-date-picker v-model="dateRange" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 240px" value-format="YYYY-MM-DD" @change="handleSearch" />
+      <el-date-picker v-model="dateRange" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期" class="date-picker" value-format="YYYY-MM-DD" @change="handleSearch" />
     </div>
 
     <!-- 订单列表 -->
-    <div class="order-table">
-      <el-table :data="pagedOrders" border style="width: 100%; margin-top: 20px;" v-loading="loading" @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="40" align="center" />
-        <el-table-column prop="orderNo" label="订单号" width="140" />
-        <el-table-column prop="userNickname" label="用户" width="100" />
-        <el-table-column prop="amount" label="金额" width="80" align="right">
-          <template #default="{row}">
-            ¥{{ row.amount }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="80" align="center">
-          <template #default="{row}">
-            <el-tag :type="statusTagType(row.status)" size="small">{{ statusText(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="支付时间" width="160" align="center">
-          <template #default="{row}">
-            {{ row.payTime ? new Date(row.payTime).toLocaleString() : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
-          <template #default="{row}">
-            <el-button link type="primary" size="small" @click="openDetailDialog(row)">详情</el-button>
-            <el-button v-if="row.status === 'pending'" link type="primary" size="small" @click="markPaid(row)">标记已付款</el-button>
-            <el-button v-if="row.status === 'to_ship'" link type="primary" size="small" @click="openShipDialog(row)">发货</el-button>
-            <el-button v-if="['to_ship', 'shipped'].includes(row.status)" link type="danger" size="small" @click="refundOrder(row)">退款</el-button>
-            <el-button link type="danger" size="small" @click="deleteOrder(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <div class="pagination-info">Total {{ total }}</div>
-        <div class="pagination-select">
-          <span>{{ pageSize }}/page</span>
-          <el-select v-model="pageSize" style="width: 80px" @change="handleSizeChange">
-            <el-option :value="5" label="5/page" />
-            <el-option :value="10" label="10/page" />
-            <el-option :value="20" label="20/page" />
-            <el-option :value="50" label="50/page" />
-          </el-select>
-        </div>
-        <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="total"
-          layout="prev, pager, next, jumper"
-          @current-change="handlePageChange"
-          background
-        />
-      </div>
-    </div>
-
+    <el-table :data="pagedOrders" style="width: 100%" class="order-table" v-loading="loading" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="48" />
+      <el-table-column prop="orderNo" label="订单号" width="140" />
+      <el-table-column prop="userNickname" label="用户" width="120" />
+      <el-table-column prop="amount" label="金额" width="100" align="right">
+        <template #default="{row}">
+          ¥{{ row.amount }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="100" align="center">
+        <template #default="{row}">
+          <el-tag :type="statusTagType(row.status)" size="small">{{ statusText(row.status) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="支付时间" width="160" align="center">
+        <template #default="{row}">
+          {{ row.payTime ? new Date(row.payTime).toLocaleString() : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="220" fixed="right" align="center">
+        <template #default="{row}">
+          <el-button link type="primary" size="small" @click="openDetailDialog(row)">详情</el-button>
+          <el-button v-if="row.status === 'pending'" link type="primary" size="small" @click="markPaid(row)">标记已付款</el-button>
+          <el-button v-if="row.status === 'to_ship'" link type="primary" size="small" @click="openShipDialog(row)">发货</el-button>
+          <el-button v-if="['to_ship', 'shipped'].includes(row.status)" link type="danger" size="small" @click="refundOrder(row)">退款</el-button>
+          <el-button link type="danger" size="small" @click="deleteOrder(row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    
+    <el-pagination
+      background
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="total"
+      :page-size="pageSize"
+      :page-sizes="[5, 10, 20, 50]"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      style="margin-top: 18px"
+      @current-change="handlePageChange"
+      @size-change="handleSizeChange"
+    />
     <!-- 订单详情弹窗 -->
     <el-dialog v-model="showDetailDialog" title="订单详情" width="600px">
       <el-descriptions :column="1" border>
@@ -430,26 +414,26 @@ function exportExcel() {
   background: #f7f8fa;
   min-height: 100vh;
 }
-
-.batch-actions {
+.order-header {
   display: flex;
   align-items: center;
   gap: 18px;
   margin-bottom: 18px;
 }
-
-.search-filters {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 18px;
+.search-input {
+  width: 220px;
 }
-
+.filter-select {
+  width: 120px;
+}
+.date-picker {
+  width: 240px;
+}
 .order-table {
   background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #e0e0e0;
+  margin-bottom: 24px;
 }
 
 :deep(.el-table) {
@@ -479,46 +463,39 @@ function exportExcel() {
   font-size: 12px;
 }
 
-.pagination-container {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 24px;
-}
-
-.pagination-info {
-  color: #606266;
-  font-size: 13px;
-}
-
-.pagination-select {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
-  span {
-    color: #606266;
-    font-size: 13px;
-  }
-  
-  :deep(.el-select) {
-    width: 100px;
-  }
-}
-
 :deep(.el-pagination) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  
   --el-pagination-button-width: 32px;
   --el-pagination-button-height: 32px;
   --el-pagination-button-margin: 0 4px;
   
   .el-pager li {
-    border-radius: 4px;
+    border-radius: 8px;
+    margin: 0 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .el-pager li:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(79, 192, 141, 0.3);
+  }
+  
+  .el-pager li.active {
+    background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
+    color: #fff;
   }
   
   .btn-prev,
   .btn-next {
-    border-radius: 4px;
+    border-radius: 8px;
   }
 }
 </style>
