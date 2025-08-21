@@ -1,382 +1,479 @@
 <template>
-  <div class="dashboard-elplus">
+  <div class="dashboard">
     <!-- 顶部统计卡片 -->
-    <el-row :gutter="20" class="stat-row">
-      <el-col :xs="24" :sm="12" :md="6" v-for="(card, idx) in statCards" :key="idx">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-card-header">
-            <span>{{ card.title }}</span>
-            <el-icon :size="28" :color="card.iconColor">
-              <component :is="card.icon" />
-            </el-icon>
-          </div>
-          <div class="stat-card-main">
-            <span class="stat-value">{{ card.value }}</span>
-            <template v-if="card.trend">
-              <el-tag :type="card.trendType" size="small" effect="plain">{{
-                card.trend
-              }}</el-tag>
+    <div class="stat-cards">
+      <el-card class="stat-card" v-for="card in statCards" :key="card.title">
+        <div class="stat-title">{{ card.title }}</div>
+        <div class="stat-value">{{ card.value }}</div>
+        <div class="stat-footer">
+          <span :class="['stat-rate', card.rate > 0 ? 'up' : 'down']">
+            <el-icon v-if="card.rate > 0"><i-ep-caret-top /></el-icon>
+            <el-icon v-else><i-ep-caret-bottom /></el-icon>
+            {{ Math.abs(card.rate) }}%
+          </span>
+          <span class="stat-desc">同比增长</span>
+        </div>
+      </el-card>
+    </div>
+    <!-- 销售趋势分析 -->
+    <el-card class="chart-card">
+      <div class="chart-title">销售趋势分析</div>
+      <v-chart :option="barOption" autoresize style="height: 320px" />
+    </el-card>
+    <!-- 下方三个区域 -->
+    <div class="bottom-section">
+      <el-card class="bottom-card">
+        <div class="chart-title">发货效率分析</div>
+        <v-chart :option="pieOption" autoresize style="height: 220px" />
+      </el-card>
+      <el-card class="bottom-card">
+        <div class="chart-title">推广效果分析</div>
+        <v-chart :option="lineOption" autoresize style="height: 220px" />
+      </el-card>
+      <el-card class="bottom-card">
+        <div class="chart-title">延迟发货原因分析</div>
+        <el-table :data="delayReasons" size="small" style="width: 100%; margin-top: 10px">
+          <el-table-column prop="reason" label="原因" width="110" />
+          <el-table-column prop="count" label="影响订单数" width="100" />
+          <el-table-column prop="percent" label="占比" width="80" />
+          <el-table-column label="同比变化">
+            <template #default="scope">
+              <span :class="scope.row.change > 0 ? 'up' : 'down'">
+                <el-icon v-if="scope.row.change > 0"><i-ep-caret-top /></el-icon>
+                <el-icon v-else><i-ep-caret-bottom /></el-icon>
+                {{ Math.abs(scope.row.change) }}%
+              </span>
             </template>
-            <template v-if="card.badge">
-              <el-tag :type="card.badgeType" size="small" effect="plain">{{
-                card.badge
-              }}</el-tag>
-            </template>
-          </div>
-          <div class="stat-card-footer" v-if="card.footer">
-            <el-tag :type="card.footerType" size="small" effect="plain">{{
-              card.footer
-            }}</el-tag>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 主体网格 -->
-    <el-row :gutter="20" class="main-row">
-      <el-col :xs="24" :md="12">
-        <el-card shadow="hover" class="main-card">
-          <div class="main-card-header">
-            <span>销售趋势</span>
-            <el-radio-group v-model="trendTab" size="small">
-              <el-radio-button label="日" />
-              <el-radio-button label="周" />
-              <el-radio-button label="月" />
-            </el-radio-group>
-          </div>
-          <div class="chart-box">
-            <div ref="lineChart" class="chart" />
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :md="12">
-        <el-card shadow="hover" class="main-card">
-          <div class="main-card-header">
-            <span>商品销量TOP5</span>
-          </div>
-          <div class="chart-box">
-            <div ref="barChart" class="chart" />
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20" class="main-row">
-      <el-col :xs="24" :md="10">
-        <el-card shadow="hover" class="main-card">
-          <div class="main-card-header">
-            <span>用户活跃度</span>
-          </div>
-          <div class="chart-box">
-            <div ref="pieChart" class="chart" />
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :md="14">
-        <el-card shadow="hover" class="main-card">
-          <div class="main-card-header">
-            <span>待处理事项</span>
-          </div>
-          <el-row :gutter="16" class="todo-row">
-            <el-col :xs="12" :sm="6" v-for="(todo, idx) in todos" :key="idx">
-              <el-card
-                :body-style="{ padding: '12px 8px' }"
-                class="todo-card"
-                shadow="never"
-              >
-                <el-icon :size="22" :color="todo.iconColor">
-                  <component :is="todo.icon" />
-                </el-icon>
-                <div class="todo-label">{{ todo.label }}</div>
-                <div class="todo-value">{{ todo.value }}</div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
-import * as echarts from "echarts";
+import { ref, onMounted } from "vue";
+import { ElCard, ElTable, ElTableColumn, ElIcon, ElMessage } from "element-plus";
+import { CaretTop, CaretBottom } from "@element-plus/icons-vue";
+import { use } from "echarts/core";
+import VChart from "vue-echarts";
+import { CanvasRenderer } from "echarts/renderers";
+import { BarChart, PieChart, LineChart } from "echarts/charts";
 import {
-  TrendCharts,
-  Goods,
-  User,
-  Box,
-  Warning,
-  CircleCheck,
-  CloseBold,
-  DataAnalysis,
-} from "@element-plus/icons-vue";
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent,
+} from "echarts/components";
+import { getDashboardStats, getUserStatistics, getProductStatistics, getSalesTrend, getDelayReasons, getDeliveryEfficiency, getPromotionEffect } from "@/api/dashboard";
 
-const statCards = [
-  {
-    title: "今日销售额",
-    value: "￥128,960",
-    trend: "+12.5%",
-    trendType: "success",
-    icon: TrendCharts,
-    iconColor: "#f56c6c",
-  },
-  {
-    title: "待处理订单",
-    value: "86",
-    badge: "待处理",
-    badgeType: "danger",
-    icon: DataAnalysis,
-    iconColor: "#faad14",
-  },
-  {
-    title: "活跃用户数",
-    value: "2,846",
-    trend: "+8.2%",
-    trendType: "success",
-    icon: User,
-    iconColor: "#67c23a",
-  },
-  {
-    title: "发货退货率",
-    value: "2.5%",
-    badge: "良好",
-    badgeType: "info",
-    icon: Box,
-    iconColor: "#409eff",
-  },
-];
+use([
+  CanvasRenderer,
+  BarChart,
+  PieChart,
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent,
+]);
 
-const todos = [
-  { label: "待上架商品", value: 12, icon: Goods, iconColor: "#409eff" },
-  { label: "待审核退款", value: 8, icon: Warning, iconColor: "#faad14" },
-  { label: "异常订单", value: 3, icon: CloseBold, iconColor: "#f56c6c" },
-  { label: "库存预警", value: 5, icon: CircleCheck, iconColor: "#67c23a" },
-];
-
-const trendTab = ref("日");
-const lineChart = ref();
-const barChart = ref();
-const pieChart = ref();
-let lineChartInstance, barChartInstance, pieChartInstance;
-
-const lineData = {
-  日: {
-    x: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
-    y: [3200, 4800, 2600, 3900, 2200, 3100, 4200],
+const statCards = ref([
+  { title: "今日销售额", value: "¥0", rate: 0 },
+  { title: "订单总量", value: "0", rate: 0 },
+  { title: "客单价", value: "¥0", rate: 0 },
+  { title: "转化率", value: "0%", rate: 0 },
+]);
+const barOption = ref({
+  tooltip: {},
+  xAxis: {
+    type: "category",
+    data: [],
   },
-  周: {
-    x: ["1月", "2月", "3月", "4月", "5月", "6月", "7月"],
-    y: [18000, 22000, 19500, 21000, 23000, 25000, 24000],
+  yAxis: {
+    type: "value",
   },
-  月: {
-    x: ["2019", "2020", "2021", "2022", "2023"],
-    y: [180000, 210000, 230000, 250000, 270000],
-  },
-};
-
-const barData = {
-  names: ["云南冰糖橙", "陕西红富士", "海南芒果", "山东苹果", "广西砂糖橘"],
-  values: [1200, 1100, 900, 800, 700],
-};
-
-const pieData = [
-  { value: 68, name: "活跃用户" },
-  { value: 32, name: "非活跃用户" },
-];
-
-function renderLineChart() {
-  if (!lineChartInstance) {
-    lineChartInstance = echarts.init(lineChart.value);
-  }
-  const { x, y } = lineData[trendTab.value];
-  lineChartInstance.setOption({
-    grid: { left: 30, right: 20, top: 30, bottom: 30 },
-    xAxis: {
-      type: "category",
-      data: x,
-      axisLine: { lineStyle: { color: "#e5e6eb" } },
-      axisLabel: { color: "#888" },
-    },
-    yAxis: {
-      type: "value",
-      axisLine: { show: false },
-      splitLine: { lineStyle: { color: "#f0f0f0" } },
-      axisLabel: { color: "#888" },
-    },
-    series: [
-      {
-        data: y,
-        type: "line",
-        smooth: true,
-        symbol: "circle",
-        symbolSize: 8,
-        lineStyle: { color: "#4e7cf7", width: 3 },
-        itemStyle: { color: "#4e7cf7" },
-        areaStyle: { color: "rgba(78,124,247,0.08)" },
+  series: [
+    {
+      data: [],
+      type: "bar",
+      name: "销售额",
+      itemStyle: {
+        color: "#4f8fff",
+        borderRadius: [6, 6, 0, 0],
       },
-    ],
-  });
-}
-
-function renderBarChart() {
-  if (!barChartInstance) {
-    barChartInstance = echarts.init(barChart.value);
-  }
-  barChartInstance.setOption({
-    grid: { left: 80, right: 20, top: 30, bottom: 30 },
-    xAxis: {
-      type: "value",
-      axisLine: { show: false },
-      splitLine: { lineStyle: { color: "#f0f0f0" } },
-      axisLabel: { color: "#888" },
+      barWidth: 36,
     },
-    yAxis: {
-      type: "category",
-      data: barData.names,
-      axisLine: { show: false },
-      axisLabel: { color: "#222", fontWeight: 500 },
-    },
-    series: [
-      {
-        data: barData.values,
-        type: "bar",
-        barWidth: 18,
-        itemStyle: { color: "#2673ff", borderRadius: [0, 8, 8, 0] },
-        label: { show: false },
-      },
-    ],
-  });
-}
-
-function renderPieChart() {
-  if (!pieChartInstance) {
-    pieChartInstance = echarts.init(pieChart.value);
-  }
-  pieChartInstance.setOption({
-    series: [
-      {
-        type: "pie",
-        radius: ["70%", "90%"],
-        avoidLabelOverlap: false,
-        label: { show: false },
-        data: pieData,
-        color: ["#2673ff", "#f56c6c"],
-      },
-    ],
-  });
-}
-
-onMounted(() => {
-  renderLineChart();
-  renderBarChart();
-  renderPieChart();
+  ],
 });
-watch(trendTab, () => {
-  renderLineChart();
+const pieOption = ref({
+  tooltip: {
+    trigger: "item",
+    formatter: "{b}: {c} ({d}%)",
+  },
+  legend: {
+    bottom: 0,
+    left: "center",
+    data: [],
+  },
+  series: [
+    {
+      name: "发货效率",
+      type: "pie",
+      radius: ["55%", "80%"],
+      avoidLabelOverlap: false,
+      label: {
+        show: false,
+      },
+      data: [],
+    },
+  ],
+});
+const lineOption = ref({
+  tooltip: {
+    trigger: "axis",
+  },
+  legend: {
+    data: ["订单量", "收入"],
+    top: 0,
+  },
+  xAxis: {
+    type: "category",
+    data: [],
+  },
+  yAxis: [
+    {
+      type: "value",
+      name: "订单量",
+      min: 0,
+    },
+    {
+      type: "value",
+      name: "收入",
+      min: 0,
+      axisLabel: {
+        formatter: "¥{value}",
+      },
+    },
+  ],
+  series: [
+    {
+      name: "订单量",
+      type: "line",
+      data: [],
+      yAxisIndex: 0,
+      smooth: true,
+      lineStyle: { color: "#4f8fff" },
+    },
+    {
+      name: "收入",
+      type: "line",
+      data: [],
+      yAxisIndex: 1,
+      smooth: true,
+      lineStyle: { color: "#22d3ee" },
+    },
+  ],
+});
+const delayReasons = ref([]);
+
+// 获取统计数据
+const getDashboardStatistics = async () => {
+  try {
+    const response = await getDashboardStats();
+    console.log('Dashboard API Response:', response.data);
+    
+    if (response.data.code === 200) {
+      // 直接使用response.data.data，不需要检查嵌套的code
+      const data = response.data.data;
+      if (data) {
+        statCards.value = [
+          { title: "今日销售额", value: `¥${data.todayRevenue || 0}`, rate: 12.5 },
+          { title: "订单总量", value: (data.totalOrders || 0).toString(), rate: 8.2 },
+          { title: "待处理订单", value: (data.pendingOrders || 0).toString(), rate: -2.8 },
+          { title: "库存不足商品", value: (data.lowStockProducts || 0).toString(), rate: 4.6 },
+        ];
+        console.log('Dashboard data updated successfully:', statCards.value);
+      } else {
+        console.error('Data is null or undefined:', data);
+        ElMessage.error('获取统计数据失败：数据为空');
+      }
+    } else {
+      console.error('API returned error code:', response.data.code, response.data.message);
+      ElMessage.error('获取统计数据失败：' + (response.data.message || '未知错误'));
+    }
+  } catch (error) {
+    console.error('获取统计数据失败:', error);
+    ElMessage.error('获取统计数据失败');
+  }
+};
+
+// 获取销售趋势数据
+const getSalesTrendData = async () => {
+  try {
+    const response = await getSalesTrend({ days: 7 });
+    if (response.data.code === 200) {
+      const data = response.data.data;
+      barOption.value.xAxis.data = data.dates || [];
+      barOption.value.series[0].data = data.sales || [];
+    } else {
+      // 使用模拟数据作为备用
+      const dates = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      const revenue = [1200, 1900, 3000, 5000, 2300, 2200, 3200];
+      barOption.value.xAxis.data = dates;
+      barOption.value.series[0].data = revenue;
+    }
+  } catch (error) {
+    console.error('获取销售趋势数据失败:', error);
+    // 使用模拟数据作为备用
+    const dates = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const revenue = [1200, 1900, 3000, 5000, 2300, 2200, 3200];
+    barOption.value.xAxis.data = dates;
+    barOption.value.series[0].data = revenue;
+  }
+};
+
+// 获取发货效率数据
+const getDeliveryEfficiencyData = async () => {
+  try {
+    const response = await getDeliveryEfficiency();
+    if (response.data.code === 200) {
+      const data = response.data.data;
+      const colors = ["#4f8fff", "#4ade80", "#fbbf24", "#f87171"];
+      pieOption.value.legend.data = data.categories || [];
+      pieOption.value.series[0].data = (data.categories || []).map((name, index) => ({
+        value: data.values[index],
+        name,
+        itemStyle: { color: colors[index] }
+      }));
+    } else {
+      // 使用模拟数据作为备用
+      const categories = ['当日发货', '次日发货', '2-3日发货', '延迟发货'];
+      const values = [65, 25, 8, 2];
+      const colors = ["#4f8fff", "#4ade80", "#fbbf24", "#f87171"];
+      pieOption.value.legend.data = categories;
+      pieOption.value.series[0].data = categories.map((name, index) => ({
+        value: values[index],
+        name,
+        itemStyle: { color: colors[index] }
+      }));
+    }
+  } catch (error) {
+    console.error('获取发货效率数据失败:', error);
+    // 使用模拟数据作为备用
+    const categories = ['当日发货', '次日发货', '2-3日发货', '延迟发货'];
+    const values = [65, 25, 8, 2];
+    const colors = ["#4f8fff", "#4ade80", "#fbbf24", "#f87171"];
+    pieOption.value.legend.data = categories;
+    pieOption.value.series[0].data = categories.map((name, index) => ({
+      value: values[index],
+      name,
+      itemStyle: { color: colors[index] }
+    }));
+  }
+};
+
+// 获取推广效果数据
+const getPromotionEffectData = async () => {
+  try {
+    const response = await getPromotionEffect();
+    if (response.data.code === 200) {
+      const data = response.data.data;
+      lineOption.value.xAxis.data = data.channels || [];
+      lineOption.value.series[0].data = data.orders || [];
+      lineOption.value.series[1].data = data.revenue || [];
+    } else {
+      // 使用模拟数据作为备用
+      const channels = ['搜索引擎', '社交媒体', '邮件营销', '直接访问', '推荐链接'];
+      const orders = [120, 200, 150, 80, 70];
+      const revenue = [12000, 25000, 18000, 9500, 8200];
+      lineOption.value.xAxis.data = channels;
+      lineOption.value.series[0].data = orders;
+      lineOption.value.series[1].data = revenue;
+    }
+  } catch (error) {
+    console.error('获取推广效果数据失败:', error);
+    // 使用模拟数据作为备用
+    const channels = ['搜索引擎', '社交媒体', '邮件营销', '直接访问', '推荐链接'];
+    const orders = [120, 200, 150, 80, 70];
+    const revenue = [12000, 25000, 18000, 9500, 8200];
+    lineOption.value.xAxis.data = channels;
+    lineOption.value.series[0].data = orders;
+    lineOption.value.series[1].data = revenue;
+  }
+};
+
+// 获取延迟发货原因数据
+const getDelayReasonsData = async () => {
+  try {
+    const response = await getDelayReasons();
+    if (response.data.code === 200) {
+      const data = response.data.data;
+      // 计算总数用于百分比计算
+      const total = data.reduce((sum, item) => sum + item.count, 0);
+      delayReasons.value = data.map(item => ({
+        reason: item.reason,
+        count: item.count,
+        percent: total > 0 ? ((item.count / total) * 100).toFixed(1) + '%' : '0%',
+        change: Math.random() * 5 - 2.5 // 模拟变化率，实际应从API获取
+      }));
+    } else {
+      // 使用模拟数据作为备用
+      delayReasons.value = [
+        { reason: '库存不足', count: 15, percent: '45.5%', change: -2.3 },
+        { reason: '物流延误', count: 8, percent: '24.2%', change: 1.8 },
+        { reason: '系统故障', count: 6, percent: '18.2%', change: -0.5 },
+        { reason: '其他原因', count: 4, percent: '12.1%', change: 0.8 }
+      ];
+    }
+  } catch (error) {
+    console.error('获取延迟发货原因数据失败:', error);
+    // 使用模拟数据作为备用
+    delayReasons.value = [
+      { reason: '库存不足', count: 15, percent: '45.5%', change: -2.3 },
+      { reason: '物流延误', count: 8, percent: '24.2%', change: 1.8 },
+      { reason: '系统故障', count: 6, percent: '18.2%', change: -0.5 },
+      { reason: '其他原因', count: 4, percent: '12.1%', change: 0.8 }
+    ];
+  }
+};
+
+// 初始化数据
+onMounted(() => {
+  getDashboardStatistics();
+  getSalesTrendData();
+  getDeliveryEfficiencyData();
+  getPromotionEffectData();
+  getDelayReasonsData();
 });
 </script>
 
+<script>
+export default {
+  components: {
+    "i-ep-caret-top": CaretTop,
+    "i-ep-caret-bottom": CaretBottom,
+    VChart,
+  },
+};
+</script>
+
 <style scoped>
-.dashboard-elplus {
-  padding: 24px;
-  background: #f5f6fa;
+.dashboard {
+  padding: 24px 2vw 32px 2vw;
+  background: #f7f8fa;
   min-height: 100vh;
   box-sizing: border-box;
 }
-.stat-row {
+.stat-cards {
+  display: flex;
+  gap: 24px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 .stat-card {
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 100%;
   border-radius: 12px;
-  min-width: 160px;
-  min-height: 110px;
+  box-shadow: 0 2px 12px #e0e0e0;
+  padding: 18px 24px 14px 24px;
+  background: #fff;
+  box-sizing: border-box;
 }
-.stat-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.stat-title {
   font-size: 15px;
   color: #888;
-  margin-bottom: 10px;
-}
-.stat-card-main {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
   margin-bottom: 8px;
 }
 .stat-value {
   font-size: 28px;
   font-weight: bold;
   color: #222;
+  margin-bottom: 8px;
 }
-.stat-card-footer {
-  margin-top: 4px;
-}
-.main-row {
-  margin-bottom: 20px;
-}
-.main-card {
-  border-radius: 12px;
-  min-height: 260px;
-}
-.main-card-header {
+.stat-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 10px;
+  gap: 8px;
+  font-size: 14px;
 }
-.chart-box {
-  flex: 1;
-  min-height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.chart {
-  width: 100%;
-  height: 200px;
-}
-.todo-row {
-  margin-top: 8px;
-}
-.todo-card {
-  background: #f5f6fa;
-  border-radius: 8px;
-  text-align: center;
-  min-height: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.todo-label {
-  font-size: 13px;
-  color: #888;
-}
-.todo-value {
-  font-size: 18px;
+.stat-rate {
   font-weight: bold;
-  margin-top: 2px;
+  display: flex;
+  align-items: center;
+}
+.stat-rate.up {
+  color: #22c55e;
+}
+.stat-rate.down {
+  color: #f87171;
+}
+.stat-desc {
+  color: #aaa;
+  font-size: 13px;
+}
+.chart-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #e0e0e0;
+  background: #fff;
+  padding: 18px 24px 10px 24px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+.chart-title {
+  font-size: 17px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #222;
+}
+.bottom-section {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.bottom-card {
+  flex: 1 1 320px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #e0e0e0;
+  background: #fff;
+  padding: 18px 18px 10px 18px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.up {
+  color: #22c55e;
+}
+.down {
+  color: #f87171;
 }
 @media (max-width: 1100px) {
-  .stat-row,
-  .main-row {
+  .bottom-section {
+    flex-direction: column;
+  }
+  .bottom-card {
+    width: 100%;
+    margin-bottom: 18px;
+  }
+  .stat-cards {
     flex-direction: column;
   }
 }
 @media (max-width: 700px) {
-  .dashboard-elplus {
-    padding: 8px;
+  .dashboard {
+    padding: 8px 2vw;
   }
-  .stat-row,
-  .main-row {
-    margin-bottom: 10px;
+  .stat-card {
+    padding: 12px 8px 10px 8px;
+    font-size: 15px;
   }
-  .main-card {
-    padding: 8px;
+  .chart-card {
+    padding: 8px 4px 6px 4px;
+  }
+  .bottom-card {
+    padding: 8px 4px 6px 4px;
   }
 }
 </style>

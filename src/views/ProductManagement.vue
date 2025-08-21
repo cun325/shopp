@@ -1,571 +1,1161 @@
 <template>
-  <div class="product-mgmt">
+  <div class="product-management">
     <!-- 顶部操作区 -->
-    <div class="toolbar">
-      <el-button type="primary" icon="el-icon-plus" @click="showAddDialog = true"
-        >+新增商品</el-button
+    <div class="product-header">
+      <el-button type="primary" @click="openAddDialog">新增商品</el-button>
+      <el-button type="danger" :disabled="!selected.length" @click="batchDelete"
+      >批量删除</el-button
       >
-      <el-button
-        type="default"
-        @click="handleBatchToggleStatus"
-        :disabled="!selected.length"
-        >批量上下架</el-button
+      <el-button type="warning" :disabled="!selected.length" @click="batchToggleStatus"
+      >批量上下架</el-button
       >
-      <el-button type="danger" @click="handleBatchDelete" :disabled="!selected.length"
-        >批量删除</el-button
+      <el-button type="info" :disabled="!selected.length" @click="openFlashSaleDialog"
+      >限时特惠</el-button
       >
+      <el-button type="primary" :disabled="!selected.length" @click="batchRecommend"
+      >推荐商品</el-button
+      >
+      <el-button type="success" @click="exportExcel">导出Excel</el-button>
+      <el-input
+          v-model="search"
+          placeholder="搜索商品名称"
+          class="search-input"
+          clearable
+          @input="handleSearch"
+      />
+      <el-select
+          v-model="filterCategory"
+          placeholder="全部分类"
+          class="filter-select"
+          clearable
+          @change="handleSearch"
+      >
+        <el-option label="全部" value="" />
+        <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+      </el-select>
+      <el-select
+          v-model="filterStatus"
+          placeholder="全部状态"
+          class="filter-select"
+          clearable
+          @change="handleSearch"
+      >
+        <el-option label="全部" value="" />
+        <el-option label="上架" value="on" />
+        <el-option label="下架" value="off" />
+      </el-select>
     </div>
-    <!-- 筛选区 -->
-    <el-card shadow="never" class="filter-card">
-      <el-form :inline="true" :model="filters" class="filter-form">
-        <el-form-item label="商品名称：">
-          <el-input
-            v-model="filters.keyword"
-            placeholder="输入商品名称搜索"
-            clearable
-            style="width: 180px"
-          />
-        </el-form-item>
-        <el-form-item label="商品分类：">
-          <el-select
-            v-model="filters.category"
-            placeholder="全部分类"
-            style="width: 140px"
-          >
-            <el-option label="全部分类" value="" />
-            <el-option label="柑橘类" value="柑橘类" />
-            <el-option label="苹果类" value="苹果类" />
-            <el-option label="热带水果" value="热带水果" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="商品状态：">
-          <el-select v-model="filters.status" placeholder="全部状态" style="width: 140px">
-            <el-option label="全部状态" value="" />
-            <el-option label="在售" value="在售" />
-            <el-option label="库存不足" value="库存不足" />
-            <el-option label="已下架" value="已下架" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-    </el-card>
 
-    <!-- 商品表格 -->
-    <el-card shadow="never" class="table-card">
-      <el-table
-        :data="pagedProducts"
-        border
+    <!-- 商品列表表格 -->
+    <el-table
+        :data="products"
         style="width: 100%"
-        :header-cell-style="{ background: '#fafbfc', color: '#222', fontWeight: 'bold' }"
-        :cell-style="cellStyle"
+        class="product-table"
         @selection-change="handleSelectionChange"
-        empty-text="暂无商品数据"
-      >
-        <el-table-column type="selection" width="48" />
-        <el-table-column prop="id" label="商品ID" width="100" align="center" />
-        <el-table-column prop="image" label="图片" width="80" align="center">
-          <template #default="scope">
-            <el-image
-              :src="scope.row.image"
+    >
+      <el-table-column type="selection" width="48" />
+      <el-table-column prop="image" label="图片" width="90">
+        <template #default="scope">
+          <el-image
+              :src="processImageUrl(scope.row.image)"
+              :preview-src-list="[processImageUrl(scope.row.image)]"
+              style="width: 60px; height: 60px; border-radius: 8px"
               fit="cover"
-              style="width: 48px; height: 48px; border-radius: 8px"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column prop="name" label="商品名称" min-width="160" />
-        <el-table-column prop="spec" label="规格" width="90" align="center" />
-        <el-table-column prop="price" label="价格" width="100" align="center">
-          <template #default="scope">
-            <span>￥{{ scope.row.price }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="stock" label="库存" width="80" align="center">
-          <template #default="scope">
-            <span
-              :style="{
-                color:
-                  scope.row.stock === 0
-                    ? '#f56c6c'
-                    : scope.row.stock < 50
-                    ? '#faad14'
-                    : '#222',
-              }"
-              >{{ scope.row.stock }}</span
-            >
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="scope">
-            <el-tag v-if="scope.row.status === '在售'" type="success" effect="light"
-              >在售</el-tag
-            >
-            <el-tag
-              v-else-if="scope.row.status === '库存不足'"
-              type="warning"
-              effect="light"
-              >库存不足</el-tag
-            >
-            <el-tag v-else type="info" effect="light">已下架</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="140" align="center">
-          <template #default="scope">
-            <el-dropdown trigger="click">
-              <el-button type="primary" link size="small"
-                >更多操作<i class="el-icon-arrow-down el-icon--right"></i
-              ></el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="toggleStatus(scope.row)">
-                    <span
-                      v-if="
-                        scope.row.status === '在售' || scope.row.status === '库存不足'
-                      "
-                      >停售</span
-                    >
-                    <span v-else>启售</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="openEditDialog(scope.row)"
-                    >编辑</el-dropdown-item
-                  >
-                  <el-dropdown-item
-                    divided
-                    @click="handleDelete(scope.row)"
-                    style="color: #f56c6c"
-                    >删除</el-dropdown-item
-                  >
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="table-footer">
-        <div class="table-total">共 {{ products.length }} 条记录</div>
-        <el-pagination
-          background
-          layout="prev, pager, next"
-          :total="filteredProducts.length"
-          :page-size="pageSize"
-          v-model:current-page="currentPage"
-          :pager-count="5"
-          class="pagination"
-        />
-      </div>
-    </el-card>
+              :lazy="true"
+          />
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="商品名称" min-width="120" />
+      <el-table-column prop="category" label="分类" width="100" />
+      <el-table-column prop="unit" label="规格" width="100" />
+      <el-table-column prop="origin" label="产地" width="100" />
+      <el-table-column prop="price" label="价格" width="100">
+        <template #default="scope">
+          <span>¥{{ scope.row.price }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="stock" label="库存" width="80" />
+      <el-table-column prop="status" label="状态" width="90">
+        <template #default="scope">
+          <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
+            {{ scope.row.status === 1 ? "上架" : "下架" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="recommended" label="推荐" width="80">
+        <template #default="scope">
+          <el-tag :type="scope.row.recommended ? 'warning' : 'info'">
+            {{ scope.row.recommended ? "推荐" : "普通" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="flashSaleActive" label="特惠" width="80">
+        <template #default="scope">
+          <el-tag :type="scope.row.flashSaleActive ? 'danger' : 'info'">
+            {{ scope.row.flashSaleActive ? "特惠" : "正常" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="380">
+        <template #default="scope">
+          <el-button size="small" @click="openDetailDialog(scope.row)">详情</el-button>
+          <el-button size="small" @click="openEditDialog(scope.row)">编辑</el-button>
+          <el-button size="small" type="danger" @click="deleteProduct(scope.row)"
+          >删除</el-button
+          >
+          <el-button size="small" type="warning" @click="toggleStatus(scope.row)">
+            {{ scope.row.status === 1 ? "下架" : "上架" }}
+          </el-button>
+          <el-button
+              size="small"
+              type="info"
+              @click="openSingleFlashSaleDialog(scope.row)"
+              :disabled="scope.row.status !== 1"
+          >特惠</el-button
+          >
+          <el-button
+              size="small"
+              type="primary"
+              @click="toggleRecommend(scope.row)"
+              :disabled="scope.row.status !== 1"
+          >
+            {{ scope.row.recommended ? "取消推荐" : "推荐" }}
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+        class="product-pagination"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        :page-size="pageSize"
+        :page-sizes="[5, 10, 20, 50]"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        style="margin-top: 18px"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+    />
 
-    <!-- 新增商品弹窗 -->
+    <!-- 新增/编辑商品弹窗 -->
     <el-dialog
-      v-model="showAddDialog"
-      title="新增商品"
-      width="420px"
-      :close-on-click-modal="false"
+        v-model="showDialog"
+        :title="dialogMode === 'add' ? '新增商品' : '编辑商品'"
+        width="420px"
+        @close="resetDialog"
     >
       <el-form
-        :model="addForm"
-        :rules="addRules"
-        ref="addFormRef"
-        label-width="80px"
-        status-icon
+          :model="dialogForm"
+          :rules="dialogRules"
+          ref="dialogFormRef"
+          label-width="80px"
       >
         <el-form-item label="商品名称" prop="name">
-          <el-input v-model="addForm.name" placeholder="请输入商品名称" />
-        </el-form-item>
-        <el-form-item label="商品图片" prop="image">
-          <el-upload
-            class="avatar-uploader"
-            action=""
-            :show-file-list="false"
-            :before-upload="beforeUpload"
-            :on-change="handleImageChange"
-          >
-            <img v-if="addForm.image" :src="addForm.image" class="avatar" />
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-          </el-upload>
-        </el-form-item>
-        <el-form-item label="规格" prop="spec">
-          <el-input v-model="addForm.spec" placeholder="如5斤装" />
-        </el-form-item>
-        <el-form-item label="价格" prop="price">
-          <el-input-number
-            v-model="addForm.price"
-            :min="0.01"
-            :step="0.1"
-            controls-position="right"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="库存" prop="stock">
-          <el-input-number
-            v-model="addForm.stock"
-            :min="0"
-            controls-position="right"
-            style="width: 100%"
-          />
+          <el-input v-model="dialogForm.name" placeholder="请输入商品名称" />
         </el-form-item>
         <el-form-item label="分类" prop="category">
-          <el-select v-model="addForm.category" placeholder="请选择分类">
-            <el-option label="柑橘类" value="柑橘类" />
-            <el-option label="苹果类" value="苹果类" />
-            <el-option label="热带水果" value="热带水果" />
+          <el-select v-model="dialogForm.category" placeholder="请选择分类">
+            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="规格" prop="unit">
+          <el-select
+              v-model="dialogForm.unit"
+              placeholder="请选择规格"
+              clearable
+          >
+            <el-option
+                v-for="option in unitOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="产地" prop="origin">
+          <el-input v-model="dialogForm.origin" placeholder="请输入产地" />
+        </el-form-item>
+        <el-form-item label="图片" prop="image">
+          <el-upload
+              class="avatar-uploader"
+              action="#"
+              :show-file-list="false"
+              :before-upload="beforeUpload"
+              :on-change="handleImageChange"
+          >
+            <img v-if="dialogForm.image"
+                 :src="processImageUrl(dialogForm.image)"
+                 class="avatar"
+            />
+            <el-icon v-else class="avatar-uploader-icon"><EpPlus /></el-icon>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="价格" prop="price">
+          <el-input-number v-model="dialogForm.price" :min="0" :step="0.01" />
+        </el-form-item>
+        <el-form-item label="库存" prop="stock">
+          <el-input-number v-model="dialogForm.stock" :min="0" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="dialogForm.status">
+            <el-radio :value="1">上架</el-radio>
+            <el-radio :value="0">下架</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitAddForm">确定</el-button>
+        <el-button @click="showDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitDialog">确定</el-button>
       </template>
     </el-dialog>
 
-    <!-- 编辑商品弹窗 -->
+    <!-- 商品详情弹窗 -->
+    <el-dialog v-model="showDetailDialog" title="商品详情" width="420px">
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="商品名称">{{
+            detailData.name
+          }}</el-descriptions-item>
+        <el-descriptions-item label="分类">{{
+            detailData.category
+          }}</el-descriptions-item>
+        <el-descriptions-item label="规格">{{ detailData.unit }}</el-descriptions-item>
+        <el-descriptions-item label="产地">{{ detailData.origin }}</el-descriptions-item>
+        <el-descriptions-item label="价格">¥{{ detailData.price }}</el-descriptions-item>
+        <el-descriptions-item label="库存">{{ detailData.stock }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="detailData.status === 1 ? 'success' : 'info'">
+            {{ detailData.status === 1 ? "上架" : "下架" }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="推荐状态">
+          <el-tag :type="detailData.recommended ? 'warning' : 'info'">
+            {{ detailData.recommended ? "推荐" : "普通" }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="特惠状态">
+          <el-tag :type="detailData.flashSaleActive ? 'danger' : 'info'">
+            {{ detailData.flashSaleActive ? "特惠" : "正常" }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="特惠价格" v-if="detailData.flashSaleActive">
+          <span style="color: #f56c6c; font-weight: bold;">¥{{ detailData.flashSalePrice }}</span>
+          <span style="text-decoration: line-through; color: #909399; margin-left: 10px;">¥{{ detailData.flashSaleOriginalPrice }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="特惠时间" v-if="detailData.flashSaleActive">
+          {{ detailData.flashSaleStartTime }} 至 {{ detailData.flashSaleEndTime }}
+        </el-descriptions-item>
+        <el-descriptions-item label="特惠库存" v-if="detailData.flashSaleActive">
+          剩余: {{ detailData.flashSaleStock }} 已售: {{ detailData.flashSaleSoldCount }}
+        </el-descriptions-item>
+        <el-descriptions-item label="图片">
+          <el-image
+              :src="processImageUrl(detailData.image)"
+              style="width: 100px; height: 100px; border-radius: 8px"
+              fit="cover"
+          />
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
+
+    <!-- 限时特惠设置弹窗 -->
     <el-dialog
-      v-model="showEditDialog"
-      title="编辑商品"
-      width="420px"
-      :close-on-click-modal="false"
+        v-model="showFlashSaleDialog"
+        title="设置限时特惠"
+        width="420px"
+        :before-close="handleCloseFlashSaleDialog"
+        @close="handleCloseFlashSaleDialog"
     >
-      <el-form
-        :model="editForm"
-        :rules="addRules"
-        ref="editFormRef"
-        label-width="80px"
-        status-icon
-      >
-        <el-form-item label="商品名称" prop="name">
-          <el-input v-model="editForm.name" placeholder="请输入商品名称" />
+      <el-form :model="flashSaleForm" :rules="flashSaleRules" ref="flashSaleFormRef" label-width="100px">
+        <el-form-item label="原价" prop="originalPrice">
+          <el-input-number v-model="flashSaleForm.originalPrice" :min="0" :step="0.01" placeholder="请输入原价" />
         </el-form-item>
-        <el-form-item label="商品图片" prop="image">
-          <el-upload
-            class="avatar-uploader"
-            action=""
-            :show-file-list="false"
-            :before-upload="beforeUpload"
-            :on-change="handleEditImageChange"
-          >
-            <img v-if="editForm.image" :src="editForm.image" class="avatar" />
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-          </el-upload>
+        <el-form-item label="特惠价格" prop="salePrice">
+          <el-input-number v-model="flashSaleForm.salePrice" :min="0" :step="0.01" placeholder="请输入特惠价格" />
         </el-form-item>
-        <el-form-item label="规格" prop="spec">
-          <el-input v-model="editForm.spec" placeholder="如5斤装" />
-        </el-form-item>
-        <el-form-item label="价格" prop="price">
-          <el-input-number
-            v-model="editForm.price"
-            :min="0.01"
-            :step="0.1"
-            controls-position="right"
-            style="width: 100%"
+        <el-form-item label="开始时间" prop="startTime">
+          <el-date-picker
+              v-model="flashSaleForm.startTime"
+              type="datetime"
+              placeholder="选择开始时间"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
-        <el-form-item label="库存" prop="stock">
-          <el-input-number
-            v-model="editForm.stock"
-            :min="0"
-            controls-position="right"
-            style="width: 100%"
+        <el-form-item label="结束时间" prop="endTime">
+          <el-date-picker
+              v-model="flashSaleForm.endTime"
+              type="datetime"
+              placeholder="选择结束时间"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="editForm.category" placeholder="请选择分类">
-            <el-option label="柑橘类" value="柑橘类" />
-            <el-option label="苹果类" value="苹果类" />
-            <el-option label="热带水果" value="热带水果" />
-          </el-select>
+        <el-form-item label="特惠库存" prop="saleStock">
+          <el-input-number v-model="flashSaleForm.saleStock" :min="1" placeholder="请输入特惠库存" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitEditForm">保存</el-button>
+        <el-button @click="handleCancelFlashSale">取消</el-button>
+        <el-button type="primary" @click="submitFlashSale">确定</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, nextTick } from "vue";
+import { ref, computed, reactive, nextTick, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { Plus as EpPlus } from "@element-plus/icons-vue";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { getProducts, getProductCategories, setFlashSale, setRecommended, batchSetRecommended } from "@/api/product";
+import request from "@/utils/request";
+import axios from "axios";
 
-const filters = ref({ keyword: "", category: "", status: "" });
-const currentPage = ref(1);
-const pageSize = 5;
+// 图片URL处理函数
+const processImageUrl = (path) => {
+  // 如果路径为空，返回默认图片
+  if (!path) return '/images?url=default.png';
+  
+  // 如果是完整URL（http或https开头），直接返回
+  if (typeof path === 'string' && (path.startsWith('http://') || path.startsWith('https://'))) {
+    return path;
+  }
+  
+  // 如果是后端图片代理格式（/images?url=开头），提取实际路径并转换为图片服务URL
+  if (path.startsWith('/images?url=')) {
+    const actualPath = path.replace('/images?url=', '');
+    return `http://localhost:8083/image-service${actualPath}`;
+  }
+  
+  // 如果路径以/api/images/开头，说明是MinIO上传返回的路径
+  if (path.startsWith('/api/images/')) {
+    return `http://localhost:8083/image-service${path}`;
+  }
+  
+  // 如果是相对路径，添加图片服务的基础URL
+  // 支持多种图片路径格式
+  if (typeof path === 'string') {
+    // 如果路径以/uploads/images开头，则直接拼接
+    if (path.startsWith('/uploads/images')) {
+      return `http://localhost:8083/image-service${path}`;
+    }
+    // 如果路径以/开头，则添加uploads/images前缀
+    if (path.startsWith('/')) {
+      return `http://localhost:8083/image-service/uploads/images${path}`;
+    }
+    // 其他情况添加完整基础路径
+    return `http://localhost:8083/image-service/uploads/images/${path}`;
+  }
+  
+  return '/images?url=default.png';
+};
+
+// 商品分类
+const categories = ref([]);
+
+// 商品数据
+const products = ref([]);
+const total = ref(0);
+const search = ref("");
+const filterStatus = ref("");
+const filterCategory = ref("");
 const selected = ref([]);
+const currentPage = ref(1);
+const pageSize = ref(5);
 
-const products = ref([
-  {
-    id: "SP001",
-    image: "https://img.yzcdn.cn/vant/apple-1.jpg",
-    name: "云南冰糖橙",
-    spec: "5斤装",
-    price: 29.9,
-    stock: 120,
-    status: "在售",
-    category: "柑橘类",
-  },
-  {
-    id: "SP002",
-    image: "https://img.yzcdn.cn/vant/apple-2.jpg",
-    name: "陕西红富士苹果",
-    spec: "4斤装",
-    price: 39.9,
-    stock: 85,
-    status: "在售",
-    category: "苹果类",
-  },
-  {
-    id: "SP003",
-    image: "https://img.yzcdn.cn/vant/banana.jpg",
-    name: "海南妃子笑荔枝",
-    spec: "3斤装",
-    price: 59.9,
-    stock: 45,
-    status: "库存不足",
-    category: "热带水果",
-  },
-  {
-    id: "SP004",
-    image: "https://img.yzcdn.cn/vant/peach.jpg",
-    name: "山东大金帅梨",
-    spec: "6斤装",
-    price: 25.9,
-    stock: 200,
-    status: "在售",
-    category: "苹果类",
-  },
-  {
-    id: "SP005",
-    image: "https://img.yzcdn.cn/vant/pear.jpg",
-    name: "新疆库尔勒香梨",
-    spec: "5斤装",
-    price: 35.9,
-    stock: 0,
-    status: "已下架",
-    category: "苹果类",
-  },
-]);
+// 获取商品列表
+async function fetchProducts() {
+  // 处理状态值转换：on -> 1, off -> 0
+  let statusValue = filterStatus.value;
+  if (statusValue === 'on') {
+    statusValue = 1;
+  } else if (statusValue === 'off') {
+    statusValue = 0;
+  }
 
-const filteredProducts = computed(() => {
-  return products.value.filter((item) => {
-    const matchKeyword =
-      !filters.value.keyword || item.name.includes(filters.value.keyword);
-    const matchCategory =
-      !filters.value.category || item.category === filters.value.category;
-    const matchStatus = !filters.value.status || item.status === filters.value.status;
-    return matchKeyword && matchCategory && matchStatus;
+  const params = {
+    page: currentPage.value, // 修改：page从1开始传值
+    size: pageSize.value,
+    search: search.value,
+    category: filterCategory.value,
+    status: statusValue, // 使用转换后的值
+  };
+  let res = {};
+  try {
+    res = (await getProducts(params)) || {};
+  } catch (e) {
+    res = {};
+  }
+  // 处理后端返回的分页数据结构
+  // 后端返回格式：{ code: 200, message: "操作成功", data: { list: [...], page: 1, size: 10, total: 100 } }
+  const responseData = res.data || {};
+  const dataList = Array.isArray(responseData.list) ? responseData.list : [];
+  products.value = dataList.map((item) => {
+    // 处理图片URL，使用processImageUrl函数处理
+    let imageUrl = '/images?url=default.png'; // 默认图片
+
+    if (item.imageUrl) {
+      imageUrl = item.imageUrl;
+    }
+
+    return {
+      id: item.id,
+      name: item.name,
+      image: imageUrl, // 使用处理后的代理路径
+      category: item.category,
+      unit: item.unit || '',
+      origin: item.origin,
+      price: item.price,
+      stock: item.stock,
+      status: item.status, // 保持数字格式：1表示上架，0表示下架
+      recommended: item.recommended || false, // 推荐状态
+      flashSaleActive: item.flashSaleActive || false, // 限时特惠状态（使用新的字段名）
+      flashSalePrice: item.flashSalePrice || null, // 特惠价格
+      flashSaleOriginalPrice: item.flashSaleOriginalPrice || null, // 原价
+      flashSaleStartTime: item.flashSaleStartTime || null, // 特惠开始时间
+      flashSaleEndTime: item.flashSaleEndTime || null, // 特惠结束时间
+      flashSaleStock: item.flashSaleStock || null, // 特惠库存
+      flashSaleSoldCount: item.flashSaleSoldCount || null, // 已售数量
+      description: item.description || '',
+      taste: item.taste || '',
+      nutrition: item.nutrition || '',
+      suitableCrowd: item.suitableCrowd || ''
+    };
   });
+  // 使用MyBatis PageInfo的total字段
+  total.value = typeof responseData.total === "number" ? responseData.total : 0;
+}
+
+// 获取商品分类列表
+async function fetchCategories() {
+  try {
+    const res = await getProductCategories();
+    // 处理后端返回的分类数据
+    // 后端返回格式：{ code: 200, message: "操作成功", data: [...] }
+    if (res && res.data && Array.isArray(res.data)) {
+      categories.value = res.data;
+    } else {
+      categories.value = [];
+    }
+  } catch (error) {
+    console.error('获取分类列表失败:', error);
+    categories.value = [];
+  }
+}
+
+onMounted(() => {
+  fetchCategories();
+  fetchProducts();
 });
 
-const pagedProducts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return filteredProducts.value.slice(start, start + pageSize);
-});
+function handleSearch() {
+  currentPage.value = 1;
+  fetchProducts();
+}
 
 function handleSelectionChange(val) {
   selected.value = val;
 }
 
-function cellStyle({ column, row, rowIndex, columnIndex }) {
-  if (column.property === "stock" && row.stock === 0) {
-    return { color: "#f56c6c", fontWeight: "bold" };
-  }
-  return {};
+// 分页
+function handlePageChange() {
+  fetchProducts();
 }
 
-// 新增商品弹窗
-const showAddDialog = ref(false);
-const addFormRef = ref();
-const addForm = reactive({
+function handleSizeChange() {
+  currentPage.value = 1; // 重置到第一页
+  fetchProducts();
+}
+
+// 弹窗相关
+const showDialog = ref(false);
+const dialogMode = ref("add"); // add | edit
+const dialogForm = reactive({
+  id: null,
   name: "",
   image: "",
-  spec: "",
-  price: null,
-  stock: null,
+  price: 0,
+  stock: 0,
+  status: 1,
   category: "",
+  unit: "",
+  origin: "",
 });
-const addRules = {
+const dialogFormRef = ref();
+const dialogRules = {
   name: [{ required: true, message: "请输入商品名称", trigger: "blur" }],
   image: [{ required: true, message: "请上传商品图片", trigger: "change" }],
-  spec: [{ required: true, message: "请输入规格", trigger: "blur" }],
-  price: [
-    { required: true, message: "请输入价格", trigger: "blur" },
-    { type: "number", min: 0.01, message: "价格需大于0", trigger: "blur" },
-  ],
-  stock: [
-    { required: true, message: "请输入库存", trigger: "blur" },
-    { type: "number", min: 0, message: "库存不能为负", trigger: "blur" },
-  ],
+  price: [{ required: true, message: "请输入价格", trigger: "blur" }],
+  stock: [{ required: true, message: "请输入库存", trigger: "blur" }],
   category: [{ required: true, message: "请选择分类", trigger: "change" }],
+  unit: [{ required: true, message: "请输入规格", trigger: "blur" }],
+  origin: [{ required: true, message: "请输入产地", trigger: "blur" }],
 };
 
-function beforeUpload(file) {
+function openAddDialog() {
+  dialogMode.value = "add";
+  Object.assign(dialogForm, {
+    id: null,
+    name: "",
+    image: "",
+    price: 0,
+    stock: 0,
+    status: "on",
+    category: "",
+    unit: "",
+    origin: "",
+  });
+  showDialog.value = true;
+  nextTick(() => dialogFormRef.value?.clearValidate());
+}
+
+function openEditDialog(row) {
+  dialogMode.value = "edit";
+  // 复制row数据，保持image路径不变
+  const formData = {
+    ...row,
+    // 确保image字段正确处理，规格回显原有值
+    image: row.image,
+    unit: row.unit || "" // 回显商品原规格
+  };
+
+  Object.assign(dialogForm, formData);
+  showDialog.value = true;
+  nextTick(() => dialogFormRef.value?.clearValidate());
+}
+
+function resetDialog() {
+  Object.assign(dialogForm, {
+    id: null,
+    name: "",
+    image: "",
+    price: 0,
+    stock: 0,
+    status: 1, // 修复：与后端数字状态（1/0）匹配
+    category: "",
+    unit: "", // 规格重置为空
+    origin: "",
+  });
+}
+
+// 将前端数据格式转换为后端需要的格式
+function mapToBackend(data) {
+  return {
+    id: data.id,
+    name: data.name,
+    imageUrl: data.image, // 直接传递完整的图片URL路径
+    category: data.category,
+    unit: data.unit,
+    origin: data.origin,
+    price: data.price,
+    stock: data.stock,
+    status: data.status, // 保持数字格式：1表示上架，0表示下架
+  };
+}
+
+async function submitDialog() {
+  dialogFormRef.value.validate(async (valid) => {
+    if (!valid) return;
+    try {
+      const payload = mapToBackend(dialogForm);
+      if (dialogMode.value === "add") {
+        await request.post("/admin/fruit/add", payload);
+        ElMessage.success("商品添加成功");
+      } else {
+        await request.put("/admin/fruit/update", payload);
+        ElMessage.success("商品信息已更新");
+      }
+      showDialog.value = false;
+      fetchProducts();
+    } catch (error) {
+      ElMessage.error(dialogMode.value === "add" ? "商品添加失败" : "商品更新失败");
+      console.error('操作失败:', error);
+    }
+  });
+}
+
+async function deleteProduct(row) {
+  try {
+    await ElMessageBox.confirm('确定要删除该商品吗？', '提示', {
+      type: 'warning'
+    });
+    await request.delete(`/admin/fruit/delete/${row.id}`);
+    ElMessage.success("商品已删除");
+    fetchProducts();
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error("删除失败");
+      console.error('删除商品失败:', error);
+    }
+  }
+}
+
+async function batchDelete() {
+  if (!selected.value.length) {
+    ElMessage.warning('请选择要删除的商品');
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(`确定要删除选中的 ${selected.value.length} 个商品吗？`, '提示', {
+      type: 'warning'
+    });
+    await request.delete("/admin/fruit/batch-delete", { data: selected.value.map((p) => p.id) });
+    selected.value = [];
+    ElMessage.success("批量删除成功");
+    fetchProducts();
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error("批量删除失败");
+      console.error('批量删除失败:', error);
+    }
+  }
+}
+
+async function toggleStatus(row) {
+  try {
+    await request.put(`/admin/fruit/toggle-status/${row.id}`);
+    ElMessage.success(row.status === 1 ? "已下架" : "已上架");
+    fetchProducts();
+  } catch (error) {
+    ElMessage.error("状态切换失败");
+    console.error('状态切换失败:', error);
+  }
+}
+
+async function batchToggleStatus() {
+  if (!selected.value.length) {
+    ElMessage.warning('请选择要操作的商品');
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(`确定要批量切换选中的 ${selected.value.length} 个商品的状态吗？`, '提示', {
+      type: 'warning'
+    });
+    const ids = selected.value.map((row) => row.id);
+    await request.put("/admin/fruit/batch-toggle-status", ids);
+    ElMessage.success("批量上下架成功");
+    selected.value = [];
+    fetchProducts();
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error("批量操作失败");
+      console.error('批量状态切换失败:', error);
+    }
+  }
+}
+
+// 图片上传相关
+async function beforeUpload(file) {
   const isImage = file.type.startsWith("image/");
   if (!isImage) {
     ElMessage.error("只能上传图片文件");
+    return false;
   }
-  return isImage;
-}
-function handleImageChange(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    addForm.image = e.target.result;
-  };
-  reader.readAsDataURL(file.raw);
-}
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    // 直接使用axios请求图片服务，使用完整URL
+    const response = await axios.post("http://localhost:8083/image-service/api/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    console.log("图片服务上传响应:", response);
 
-function submitAddForm() {
-  addFormRef.value.validate((valid) => {
-    if (valid) {
-      const newId = "SP" + (products.value.length + 1).toString().padStart(3, "0");
-      products.value.unshift({
-        id: newId,
-        image: addForm.image,
-        name: addForm.name,
-        spec: addForm.spec,
-        price: addForm.price,
-        stock: addForm.stock,
-        status: addForm.stock === 0 ? "已下架" : addForm.stock < 50 ? "库存不足" : "在售",
-        category: addForm.category,
-      });
-      showAddDialog.value = false;
-      Object.assign(addForm, {
-        name: "",
-        image: "",
-        spec: "",
-        price: null,
-        stock: null,
-        category: "",
-      });
-      nextTick(() => addFormRef.value && addFormRef.value.clearValidate());
-      ElMessage.success("新增商品成功");
-    }
-  });
-}
-
-// 编辑商品弹窗
-const showEditDialog = ref(false);
-const editFormRef = ref();
-const editForm = reactive({});
-let editIndex = -1;
-function openEditDialog(row) {
-  Object.assign(editForm, row);
-  editIndex = products.value.findIndex((item) => item.id === row.id);
-  showEditDialog.value = true;
-}
-function handleEditImageChange(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    editForm.image = e.target.result;
-  };
-  reader.readAsDataURL(file.raw);
-}
-function submitEditForm() {
-  editFormRef.value.validate((valid) => {
-    if (valid && editIndex !== -1) {
-      products.value[editIndex] = { ...editForm };
-      showEditDialog.value = false;
-      ElMessage.success("商品信息已更新");
-    }
-  });
-}
-
-// 删除商品
-function handleDelete(row) {
-  ElMessageBox.confirm("确定要删除该商品吗？", "提示", { type: "warning" })
-    .then(() => {
-      products.value = products.value.filter((item) => item.id !== row.id);
-      ElMessage.success("删除成功");
-    })
-    .catch(() => {});
-}
-// 批量删除
-function handleBatchDelete() {
-  if (!selected.value.length) return;
-  ElMessageBox.confirm("确定要删除选中的商品吗？", "提示", { type: "warning" })
-    .then(() => {
-      const ids = selected.value.map((item) => item.id);
-      products.value = products.value.filter((item) => !ids.includes(item.id));
-      selected.value = [];
-      ElMessage.success("批量删除成功");
-    })
-    .catch(() => {});
-}
-
-// 批量上下架
-function handleBatchToggleStatus() {
-  if (!selected.value.length) return;
-  selected.value.forEach((row) => {
-    if (row.status === "在售" || row.status === "库存不足") {
-      row.status = "已下架";
+    // 图片服务返回完整的URL
+    let imageUrl;
+    if (response && response.data && response.data.url) {
+      imageUrl = response.data.url;
+    } else if (response && response.url) {
+      imageUrl = response.url;
     } else {
-      row.status = row.stock === 0 ? "已下架" : row.stock < 50 ? "库存不足" : "在售";
+      throw new Error('无法从响应中提取图片URL');
     }
-  });
-  ElMessage.success("批量上下架操作成功");
+
+    // 保存完整的图片URL路径
+    dialogForm.image = imageUrl;
+    console.log("处理后的图片URL:", dialogForm.image);
+
+    ElMessage.success("图片上传成功");
+  } catch (error) {
+    ElMessage.error("图片上传失败: " + (error.message || "未知错误"));
+    console.error("上传错误:", error);
+  }
+  return false; // 阻止默认上传
+}
+function handleImageChange() {}
+
+// 商品详情弹窗
+const showDetailDialog = ref(false);
+const detailData = ref({});
+
+// 限时特惠弹窗
+const showFlashSaleDialog = ref(false);
+const flashSaleForm = reactive({
+  fruitId: null,
+  originalPrice: null,
+  salePrice: null,
+  startTime: null,
+  endTime: null,
+  saleStock: null,
+});
+const flashSaleFormRef = ref(); // 添加这行
+
+// 记录原始表单数据用于检测修改
+const originalFlashSaleForm = ref({});
+
+const flashSaleRules = {
+  originalPrice: [{ required: true, message: "请输入原价", trigger: "blur" }],
+  salePrice: [{ required: true, message: "请输入特惠价格", trigger: "blur" }],
+  startTime: [{ required: true, message: "请选择开始时间", trigger: "change" }],
+  endTime: [{ required: true, message: "请选择结束时间", trigger: "change" }],
+  saleStock: [{ required: true, message: "请输入特惠库存", trigger: "blur" }],
+};
+const currentFlashSaleProduct = ref(null); // 当前设置特惠的商品
+const isFlashSaleBatch = ref(false); // 是否批量设置特惠
+function openDetailDialog(row) {
+  detailData.value = { ...row };
+  showDetailDialog.value = true;
 }
 
-// 单个停售/启售
-function toggleStatus(row) {
-  if (row.status === "在售" || row.status === "库存不足") {
-    row.status = "已下架";
-    ElMessage.success("商品已停售");
-  } else {
-    row.status = row.stock === 0 ? "已下架" : row.stock < 50 ? "库存不足" : "在售";
-    ElMessage.success("商品已启售");
+// 导出Excel
+function exportExcel() {
+  const data = products.value.map((item) => ({
+    商品名称: item.name,
+    分类: item.category,
+    规格: item.unit,
+    产地: item.origin,
+    价格: item.price,
+    库存: item.stock,
+    状态: item.status === 1 ? "上架" : "下架",
+    推荐状态: item.recommended ? "推荐" : "普通",
+    特惠状态: item.flashSale ? "特惠" : "正常",
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "商品列表");
+  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  saveAs(new Blob([wbout], { type: "application/octet-stream" }), "商品列表.xlsx");
+  ElMessage.success("导出成功");
+}
+
+// 限时特惠相关方法
+function openFlashSaleDialog() {
+  if (selected.value.length === 0) {
+    ElMessage.warning('请先选择要设置特惠的商品');
+    return;
+  }
+
+  // 检查是否有下架商品
+  const offlineProducts = selected.value.filter(p => p.status !== 1);
+  if (offlineProducts.length > 0) {
+    ElMessage.warning('只有上架的商品才能设置限时特惠，请先上架相关商品');
+    return;
+  }
+
+  isFlashSaleBatch.value = true;
+  currentFlashSaleProduct.value = null;
+  showFlashSaleDialog.value = true;
+}
+
+function openSingleFlashSaleDialog(row) {
+  // 检查商品是否上架
+  if (row.status !== 1) {
+    ElMessage.warning('只有上架的商品才能设置限时特惠');
+    return;
+  }
+
+  // 重置表单
+  const formData = {
+    fruitId: row.id,
+    originalPrice: row.flashSaleOriginalPrice || row.price, // 如果已有原价则使用，否则使用当前价格
+    salePrice: row.flashSalePrice || null,
+    startTime: row.flashSaleStartTime || null,
+    endTime: row.flashSaleEndTime || null,
+    saleStock: row.flashSaleStock || row.stock, // 如果已有特惠库存则使用，否则使用当前库存
+  };
+
+  Object.assign(flashSaleForm, formData);
+  // 保存原始数据用于检测修改
+  originalFlashSaleForm.value = JSON.parse(JSON.stringify(formData));
+
+  showFlashSaleDialog.value = true;
+  nextTick(() => flashSaleFormRef.value?.clearValidate());
+}
+
+function resetFlashSaleDialog() {
+  Object.assign(flashSaleForm, {
+    fruitId: null,
+    originalPrice: null,
+    salePrice: null,
+    startTime: null,
+    endTime: null,
+    saleStock: null,
+  });
+  // 清空原始表单数据
+  originalFlashSaleForm.value = {};
+  currentFlashSaleProduct.value = null;
+  isFlashSaleBatch.value = false;
+  if (flashSaleFormRef.value) {
+    flashSaleFormRef.value.resetFields();
   }
 }
+
+// 检测表单是否有修改
+function hasFlashSaleFormChanged() {
+  if (!originalFlashSaleForm.value || !flashSaleForm.fruitId) {
+    return false;
+  }
+
+  return JSON.stringify(flashSaleForm) !== JSON.stringify(originalFlashSaleForm.value);
+}
+
+// 处理取消按钮点击
+async function handleCancelFlashSale() {
+  // 检查表单是否有修改
+  if (hasFlashSaleFormChanged()) {
+    try {
+      await ElMessageBox.confirm(
+          '检测到表单有修改，是否保存修改？',
+          '提示',
+          {
+            confirmButtonText: '保存',
+            cancelButtonText: '不保存',
+            type: 'warning',
+          }
+      );
+
+      // 用户选择保存，调用提交逻辑
+      await submitFlashSale();
+      return; // 如果保存成功，submitFlashSale会关闭弹窗
+    } catch (action) {
+      // 用户选择不保存，直接关闭弹窗
+      if (action === 'cancel') {
+        // 用户点击了"不保存"按钮，直接关闭
+        showFlashSaleDialog.value = false;
+        resetFlashSaleDialog();
+      }
+      // 如果用户点击了右上角X或按了ESC，不做任何操作
+      return;
+    }
+  }
+
+  // 没有修改，直接关闭
+  showFlashSaleDialog.value = false;
+  resetFlashSaleDialog();
+}
+
+// 修复弹窗关闭功能（用于右上角X按钮和ESC键）
+async function handleCloseFlashSaleDialog(done) {
+  // 检查表单是否有修改
+  if (hasFlashSaleFormChanged()) {
+    try {
+      await ElMessageBox.confirm(
+          '检测到表单有修改，是否保存修改？',
+          '提示',
+          {
+            confirmButtonText: '保存',
+            cancelButtonText: '不保存',
+            type: 'warning',
+          }
+      );
+
+      // 用户选择保存，调用提交逻辑
+      await submitFlashSale();
+      if (done) done(); // 如果保存成功，关闭弹窗
+      return;
+    } catch (action) {
+      // 用户选择不保存或取消
+      if (action === 'cancel') {
+        // 用户点击了"不保存"按钮，直接关闭
+        resetFlashSaleDialog();
+        if (done) done();
+      }
+      // 如果用户点击了右上角X或按了ESC，不关闭弹窗
+      return;
+    }
+  }
+
+  // 没有修改，直接关闭
+  resetFlashSaleDialog();
+  if (done) done();
+}
+
+async function submitFlashSale() {
+  if (!flashSaleFormRef.value) return;
+  await flashSaleFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const flashSaleData = {
+          fruitId: flashSaleForm.fruitId,
+          originalPrice: flashSaleForm.originalPrice,
+          salePrice: flashSaleForm.salePrice,
+          startTime: flashSaleForm.startTime,
+          endTime: flashSaleForm.endTime,
+          stock: flashSaleForm.saleStock,
+          status: 1
+        };
+        await setFlashSale(flashSaleForm.fruitId, flashSaleData);
+        ElMessage.success("设置限时特惠成功");
+        showFlashSaleDialog.value = false;
+        fetchProducts(); // 重新获取商品列表以更新特惠状态
+      } catch (error) {
+        console.error('设置限时特惠失败:', error);
+        ElMessage.error("设置限时特惠失败: " + (error.message || "未知错误"));
+      }
+    }
+  });
+}
+
+// 推荐相关方法
+async function batchRecommend() {
+  if (selected.value.length === 0) {
+    ElMessage.warning('请先选择要推荐的商品');
+    return;
+  }
+
+  // 检查是否有下架商品
+  const offlineProducts = selected.value.filter(p => p.status !== 1);
+  if (offlineProducts.length > 0) {
+    ElMessage.warning('只有上架的商品才能设置推荐，请先上架相关商品');
+    return;
+  }
+
+  try {
+    const productIds = selected.value.map(p => p.id);
+    await batchSetRecommended(productIds, true);
+    ElMessage.success('批量设置推荐成功');
+    await fetchProducts();
+  } catch (error) {
+    console.error('批量设置推荐失败:', error);
+    ElMessage.error('批量设置推荐失败');
+  }
+}
+
+async function toggleRecommend(row) {
+  // 检查商品是否上架
+  if (row.status !== 1) {
+    ElMessage.warning('只有上架的商品才能设置推荐');
+    return;
+  }
+
+  try {
+    const newRecommendedStatus = !row.recommended;
+    await setRecommended(row.id, newRecommendedStatus);
+    ElMessage.success(newRecommendedStatus ? '设置推荐成功' : '取消推荐成功');
+    await fetchProducts();
+  } catch (error) {
+    console.error('切换推荐状态失败:', error);
+    ElMessage.error('操作失败');
+  }
+}
+
+// 新增：规格下拉选项（固定字段）
+const unitOptions = [
+  { label: '盒/5', value: '盒/5' },
+  { label: '500g/盒', value: '500g/盒' },
+  { label: '1个', value: '1个' },
+  { label: '4个装', value: '4个装' },
+  { label: '10个', value: '10个' },
+  { label: '1kg/份', value: '1kg/份' }
+];
+
 </script>
 
 <style scoped>
-.product-mgmt {
-  margin-top: -6%;
-  padding: 8px 24px 24px 24px;
-  background: #f5f6fa;
+.product-management {
+  padding: 24px 32px 32px 32px;
+  background: #f7f8fa;
   min-height: 100vh;
-  box-sizing: border-box;
 }
-.toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.filter-card {
-  margin-bottom: 18px;
-  background: #fafbfc;
-  border-radius: 12px;
-  border: none;
-}
-.filter-form {
-  padding: 8px 0 0 0;
-}
-.table-card {
-  border-radius: 12px;
-  border: none;
-  margin-bottom: 0;
-}
-.el-table {
-  border-radius: 12px;
-  overflow: hidden;
-  font-size: 15px;
-}
-.el-table th {
-  background: #fafbfc !important;
-  color: #222;
-  font-weight: bold;
-}
-.el-table .el-table__cell {
-  padding: 14px 0;
-}
-.table-footer {
+.product-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 8px 0 8px;
+  gap: 18px;
+  margin-bottom: 18px;
 }
-.table-total {
-  color: #888;
-  font-size: 14px;
+.search-input {
+  width: 220px;
 }
-.pagination {
-  margin: 0;
+.filter-select {
+  width: 120px;
+}
+.product-table {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-table:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* 表格行悬停效果 */
+:deep(.el-table__row) {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-table__row:hover) {
+  background-color: rgba(79, 192, 141, 0.05) !important;
+  transform: scale(1.01);
+}
+
+/* 表格头部样式优化 */
+:deep(.el-table__header-wrapper) {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+:deep(.el-table th) {
+  background: transparent !important;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* 表格单元格样式 */
+:deep(.el-table td) {
+  border-bottom: 1px solid #f1f3f4;
+  padding: 16px 12px;
+}
+
+/* 状态标签样式优化 */
+:deep(.el-tag) {
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-weight: 500;
+  border: none;
+}
+
+/* 按钮样式优化 */
+:deep(.el-button) {
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+:deep(.el-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
+  border: none;
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #42b883 0%, #369970 100%);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .product-table {
+    margin: 0 -12px 24px -12px;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-table {
+    margin: 0 -16px 24px -16px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  :deep(.el-table) {
+    font-size: 14px;
+  }
+
+  :deep(.el-table th),
+  :deep(.el-table td) {
+    padding: 12px 8px;
+  }
+
+  :deep(.el-button) {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  :deep(.el-tag) {
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  :deep(.el-table th),
+  :deep(.el-table td) {
+    padding: 8px 4px;
+  }
+
+  :deep(.el-button) {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* 隐藏部分列以适应小屏幕 */
+  :deep(.el-table__column--hidden-xs) {
+    display: none;
+  }
+}
+
+/* 加载状态优化 */
+:deep(.el-loading-mask) {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+}
+
+:deep(.el-loading-spinner) {
+  color: #4fc08d;
+}
+
+/* 分页组件样式优化 */
+:deep(.el-pagination) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+:deep(.el-pagination .el-pager li) {
+  border-radius: 8px;
+  margin: 0 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-pagination .el-pager li:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(79, 192, 141, 0.3);
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  :deep(.el-pagination) {
+    margin: 16px -16px 0 -16px;
+    border-radius: 0;
+    padding: 12px;
+  }
+
+  :deep(.el-pagination .el-pagination__total),
+  :deep(.el-pagination .el-pagination__sizes) {
+    display: none;
+  }
 }
 .avatar-uploader {
   display: flex;
@@ -573,8 +1163,8 @@ function toggleStatus(row) {
   justify-content: flex-start;
 }
 .avatar-uploader .avatar {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   display: block;
   border-radius: 8px;
   object-fit: cover;
@@ -582,11 +1172,15 @@ function toggleStatus(row) {
 .avatar-uploader-icon {
   font-size: 24px;
   color: #c0c4cc;
-  width: 48px;
-  height: 48px;
-  line-height: 48px;
+  width: 60px;
+  height: 60px;
+  line-height: 60px;
   text-align: center;
   border: 1px dashed #d9d9d9;
   border-radius: 8px;
+}
+.product-pagination {
+  margin-top: 18px;
+  text-align: right;
 }
 </style>

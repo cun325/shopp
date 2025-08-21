@@ -53,59 +53,98 @@
     </div>
   </div>
 </template>
+<script setup>
+import { ref, watch, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import request from "@/utils/request";
+import logo2 from "@/assets/logo2.png";
+import fruits from "@/assets/sg.png";
 
-<script>
-export default {
-  name: "LoginPage",
-  data() {
-    return {
-      logoSrc: require("@/assets/logo2.png"),
-      fruitsSrc: require("@/assets/sg.png"),
-      phonenum: "",
-      code: "",
-      isSending: false,
-      countdown: 60,
-      mockCode: "", // 模拟的验证码
-    };
-  },
-  computed: {
-    isPhoneNumberValid() {
-      return /^\d{11}$/.test(this.phonenum);
-    },
-  },
-  methods: {
-    async handleLogin() {
-      if (!this.isPhoneNumberValid) {
-        alert("请输入正确的11位手机号");
-        return;
+const logoSrc = logo2;
+const fruitsSrc = fruits;
+const phonenum = ref("");
+const code = ref("");
+const loading = ref(false);
+const isSending = ref(false);
+const countdown = ref(60);
+const isPhoneNumberValid = ref(false);
+const router = useRouter();
+
+watch(phonenum, (val) => {
+  isPhoneNumberValid.value = /^\d{11}$/.test(val);
+});
+
+let timer = null;
+
+async function sendVerificationCode() {
+  if (!isPhoneNumberValid.value) {
+    ElMessage.error("请输入正确的11位手机号");
+    return;
+  }
+  isSending.value = true;
+  try {
+    await request.post("/auth/send-code", { phone: phonenum.value });
+    ElMessage.success("验证码已发送");
+    startCountdown();
+  } catch (error) {
+    isSending.value = false;
+    // 错误已在request拦截器中处理
+  }
+}
+
+function startCountdown() {
+  countdown.value = 60;
+  timer = setInterval(() => {
+    countdown.value--;
+    if (countdown.value <= 0) {
+      clearInterval(timer);
+      isSending.value = false;
+    }
+  }, 1000);
+}
+
+async function handleLogin() {
+  if (!isPhoneNumberValid.value) {
+    ElMessage.error("请输入正确的手机号");
+    return;
+  }
+  if (!code.value) {
+    ElMessage.error("请输入验证码");
+    return;
+  }
+  loading.value = true;
+  try {
+    const response = await request.post("/auth/login", {
+      phone: phonenum.value,
+      code: code.value
+    });
+    
+    if (response.code === 200) {
+      ElMessage.success("登录成功");
+      // 存储token到localStorage
+      if (response.data && response.data.token) {
+        localStorage.setItem("token", response.data.token);
       }
-      if (this.code === this.mockCode) {
-        alert("登录成功！");
-        this.$router.push("/index"); // 跳转到首页
-      } else {
-        alert("验证码错误，请重新输入");
-      }
-    },
-    sendVerificationCode() {
-      if (!this.isPhoneNumberValid) {
-        alert("请输入正确的11位手机号");
-        return;
-      }
-      this.isSending = true;
-      this.mockCode = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`模拟验证码已生成：${this.mockCode}`);
-      alert(`验证码已发送（模拟值为：${this.mockCode}），请注意查收`);
-      let timer = setInterval(() => {
-        this.countdown--;
-        if (this.countdown <= 0) {
-          clearInterval(timer);
-          this.isSending = false;
-          this.countdown = 60;
-        }
-      }, 1000);
-    },
-  },
-};
+      // 使用push替代replace，确保导航历史正确
+      router.push("/index/dashboard");
+    } else {
+      ElMessage.error(response.message || "登录失败");
+    }
+  } catch (error) {
+    ElMessage.error("登录请求失败: " + (error.message || "未知错误"));
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+});
 </script>
 
 <style scoped>

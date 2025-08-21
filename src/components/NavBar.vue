@@ -5,12 +5,13 @@
         <button class="menu-btn" @click="$emit('toggleSidebar')">
           <span class="menu-icon">&#9776;</span>
         </button>
-        <span v-if="!isCollapsed" class="navbar-title">鲜果云销</span>
+          <span v-if="!isCollapsed" class="navbar-title">鲜果云销</span>
       </div>
     </div>
     <div class="navbar-center">
       <span class="navbar-page-title">{{ title }}</span>
       <input
+        v-if="showSearch"
         class="navbar-search"
         type="text"
         :placeholder="searchPlaceholder"
@@ -42,6 +43,10 @@ export default {
       type: String,
       default: "搜索商品或者商品ID",
     },
+    showSearch: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
@@ -60,12 +65,14 @@ export default {
   align-items: center;
   justify-content: flex-start;
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
   position: fixed;
   left: 0;
   top: 0;
   right: 0;
   z-index: 1000;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 .navbar-left-bg {
   height: 100%;
@@ -118,16 +125,18 @@ export default {
 .navbar-center {
   flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
   gap: 24px;
+  justify-content: flex-start;
 }
 .navbar-page-title {
   font-size: 20px;
   font-weight: bold;
   color: #222;
   min-width: 120px;
-  margin-right: 50%;
+  margin-right: 0;
+  text-align: left;
+  margin-left: 20px;
 }
 .navbar-search {
   width: 320px;
@@ -138,11 +147,33 @@ export default {
   font-size: 15px;
   background: #f7f7f7;
   outline: none;
-  transition: border 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
+
 .navbar-search:focus {
   border: 1.5px solid #4fc08d;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(79, 192, 141, 0.15);
+  transform: translateY(-1px);
+}
+
+.navbar-search:hover {
+  border-color: #c0c4cc;
+  background: #fff;
+}
+
+@media (max-width: 768px) {
+  .navbar-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-search {
+    width: 150px;
+    font-size: 14px;
+  }
 }
 .navbar-right {
   display: flex;
@@ -155,18 +186,43 @@ export default {
   cursor: pointer;
   margin-right: 6px;
   color: #666;
-  transition: color 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .icon-btn:hover {
   color: #4fc08d;
+  background: rgba(79, 192, 141, 0.1);
+  transform: translateY(-1px);
 }
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
 .avatar {
-  background: #4fc08d;
+  background: linear-gradient(135deg, #4fc08d 0%, #42b883 100%);
   color: #fff;
-  border-radius: 16px;
-  padding: 6px 16px;
+  border-radius: 20px;
+  padding: 8px 16px;
   font-size: 15px;
   font-weight: bold;
   margin-left: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(79, 192, 141, 0.3);
+}
+
+.avatar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(79, 192, 141, 0.4);
+}
+
+.avatar:active {
+  transform: translateY(0);
 }
 </style>
