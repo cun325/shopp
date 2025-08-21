@@ -7,10 +7,11 @@ module.exports = defineConfig({
   
   // 开发服务器配置
   devServer: {
+    host: '0.0.0.0',
     port: 3000,
-    historyApiFallback: true,
     client: {
-      overlay: false
+      overlay: false,
+      webSocketURL: 'auto://0.0.0.0:0/ws'
     },
     proxy: {
       '/api/messages': {
@@ -46,6 +47,11 @@ module.exports = defineConfig({
         pathRewrite: {
           '^/uploads': '/image-service/uploads'
         }
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true
       }
     }
   },

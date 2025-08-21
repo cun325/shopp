@@ -133,7 +133,7 @@ const filterStatus = ref('');
 const dateRange = ref([]);
 const selected = ref([]);
 const currentPage = ref(1);
-const pageSize = ref(5);
+const pageSize = ref(5); // 将默认页面大小从5改为10
 
 // 获取订单列表
 const fetchOrders = async () => {
@@ -141,7 +141,7 @@ const fetchOrders = async () => {
   try {
     // 构造查询参数
     const params = {
-      page: currentPage.value, // 修改：page从1开始传值
+      page: currentPage.value,
       size: pageSize.value,
       search: search.value,
       status: filterStatus.value
@@ -156,9 +156,10 @@ const fetchOrders = async () => {
     const res = await getOrders(params);
     
     // 处理MyBatis PageInfo返回的分页数据结构
-     // 后端返回格式：{ code: 200, message: "操作成功", data: { code: 200, data: { list: [...], pageNum: 1, pageSize: 10, total: 100, pages: 10, ... } } }
-     const responseData = res.data?.data || res.data || {};
-     if (res && typeof res === 'object' && Array.isArray(responseData.list)) {
+    // 后端返回格式：{ code: 200, message: "操作成功", data: { code: 200, data: { list: [...], pageNum: 1, pageSize: 10, total: 100, pages: 10, ... } } }
+    const responseData = res.data?.data || res.data || {};
+    
+    if (res && typeof res === 'object' && Array.isArray(responseData.list)) {
       // 映射后端字段到前端需要的字段
       orders.value = responseData.list.map(item => ({
         ...item,
@@ -184,16 +185,15 @@ const fetchOrders = async () => {
         items: item.items || [],
         totalQuantity: item.totalQuantity || 0
       }));
-      // 使用MyBatis PageInfo的total字段
-      total.value = typeof responseData.total === 'number' ? responseData.total : 0;
-    } else {
-      // 其他情况初始化为空数组
-      orders.value = [];
-      total.value = 0;
-    }
-  } catch (error) {
-    ElMessage.error('获取订单列表失败: ' + (error.message || '未知错误'));
-    console.error('获取订单列表失败:', error);
+    // 使用MyBatis PageInfo的total字段
+    total.value = typeof responseData.total === 'number' ? responseData.total : 0;
+  } else {
+    // 其他情况初始化为空数组
+    orders.value = [];
+    total.value = 0;
+  }
+} catch (error) {
+  ElMessage.error('获取订单列表失败: ' + (error.message || '未知错误'));
     orders.value = [];
     total.value = 0;
   } finally {
@@ -221,8 +221,8 @@ onMounted(() => {
 
 // 搜索处理
 const handleSearch = () => {
-  currentPage.value = 1;
-  fetchOrders();
+  currentPage.value = 1; // 重置为第一页
+  fetchOrders(); // 使用当前的搜索条件获取订单
 };
 
 // 分页处理

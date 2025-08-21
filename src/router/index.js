@@ -8,8 +8,6 @@ import DeliveryManagement from '../views/DeliveryManagement.vue'
 import UserManagement from '../views/UserManagement.vue'
 import CategoryManagement from '../views/CategoryManagement.vue'
 import BannerManagement from '../views/BannerManagement.vue'
-import AIModelManagement from '../views/AIModelManagement.vue'
-import ModelManagement from '../views/ModelManagement.vue'
 import ModelTraining from '../views/ModelTraining.vue'
 
 import CustomerService from '../views/CustomerService.vue'
@@ -38,7 +36,6 @@ const routes = [
       { path: 'customer-service', name: 'CustomerService', component: CustomerService },
       { path: 'message-template', name: 'MessageTemplate', component: MessageTemplateAdmin },
       { path: 'message-sending', name: 'MessageSending', component: MessageSendingAdmin },
-      { path: 'ai-model-management', name: 'AIModelManagement', component: ModelManagement },
       { path: 'model-training', name: 'ModelTraining', component: ModelTraining },
     ]
   },

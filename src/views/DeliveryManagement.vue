@@ -69,8 +69,8 @@
       :page-sizes="[10, 20, 50, 100]"
       v-model:current-page="currentPage"
       v-model:page-size="pageSize"
-      @current-change="loadOrders"
-      @size-change="loadOrders"
+      @current-change="handlePageChange"
+      @size-change="handleSizeChange"
       style="margin-top: 18px;"
     />
 
@@ -194,12 +194,13 @@ async function loadOrders() {
           userName: order.receiverName || '未知用户',
           phone: order.receiverPhone,
           amount: order.totalAmount || order.payAmount,
+          totalQuantity: order.totalQuantity || 0,
           status: order.status === 0 ? 'pending' : order.status === 1 ? 'paid' : order.status === 2 ? 'shipped' : 'delivered',
           orderTime: order.createTime ? new Date(order.createTime).toLocaleString() : '',
           address: `${order.receiverProvince || ''}${order.receiverCity || ''}${order.receiverDistrict || ''}${order.receiverAddress || ''}`,
-          expressCompany: order.expressCompany || '',
-          expressNo: order.expressNo || '',
-          shipTime: order.shipTime ? new Date(order.shipTime).toLocaleString() : '',
+          expressCompany: order.courier || '',
+          expressNo: order.trackingNumber || '',
+          shipTime: order.deliveryTime ? new Date(order.deliveryTime).toLocaleString() : '',
           items: order.items || []
         }));
         total.value = data.length;
@@ -250,6 +251,16 @@ async function loadExpressCompanies() {
 
 function handleSelectionChange(val) {
   selected.value = val;
+}
+
+// 分页处理
+function handlePageChange() {
+  loadOrders();
+}
+
+function handleSizeChange() {
+  currentPage.value = 1;
+  loadOrders();
 }
 
 // 订单详情弹窗
@@ -359,6 +370,7 @@ function batchDelete() {
 }
 
 
+// 搜索处理
 function handleSearch() {
   currentPage.value = 1;
   loadOrders();

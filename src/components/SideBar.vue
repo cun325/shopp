@@ -74,28 +74,28 @@ export default {
           route: "/index/customer-service",
         },
 
+        // {
+        //   name: "系统消息通知管理",
+        //   icon: "📄",
+        //   text: "系统消息通知管理",
+        //   route: "/index/message-template",
+        // },
         {
-          name: "消息模板",
-          icon: "📄",
-          text: "消息模板",
-          route: "/index/message-template",
-        },
-        {
-          name: "消息发送",
+          name: "系统消息通知管理",
           icon: "📤",
-          text: "消息发送",
+          text: "系统消息通知管理",
           route: "/index/message-sending",
         },
+        // {
+        //   name: "AI模型管理",
+        //   icon: "🤖",
+        //   text: "AI模型管理",
+        //   route: "/index/ai-model-management",
+        // },
         {
-          name: "AI模型管理",
-          icon: "🤖",
-          text: "AI模型管理",
-          route: "/index/ai-model-management",
-        },
-        {
-          name: "模型训练",
+          name: "AI模型训练",
           icon: "🧠",
-          text: "模型训练",
+          text: "AI模型训练",
           route: "/index/model-training",
         },
       ],
@@ -126,7 +126,7 @@ export default {
         "/index/delivery-management": "发货管理",
         "/index/user-management": "用户管理",
         "/index/customer-service": "客服系统",
-        "/index/message-template": "消息模板",
+        "/index/message-template": "系统消息通知管理",
         "/index/message-sending": "消息发送",
         "/index/ai-model-management": "AI模型管理",
       };

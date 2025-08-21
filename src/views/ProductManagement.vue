@@ -537,7 +537,9 @@ function openEditDialog(row) {
     // 确保image字段正确处理，规格回显原有值
     image: row.image,
     unit: row.unit || "", // 回显商品原规格
-    description: row.description || "" // 回显商品描述
+    description: row.description || "", // 回显商品描述
+    // 修复：正确处理分类字段回显，确保能正确匹配下拉选项
+    category: row.categoryId ? row.categoryId : row.category || ""
   };
 
   Object.assign(dialogForm, formData);
@@ -562,12 +564,27 @@ function resetDialog() {
 
 // 将前端数据格式转换为后端需要的格式
 function mapToBackend(data) {
+  // 确保categoryId始终是数字ID，而不是分类名称
+  let categoryId = data.category;
+  // 如果categoryId是字符串且可以转换为数字，则转换为数字
+  if (typeof categoryId === 'string' && !isNaN(Number(categoryId))) {
+    categoryId = Number(categoryId);
+  }
+
+  // 如果categoryId仍然是字符串（分类名称），尝试在分类列表中查找对应的ID
+  if (typeof categoryId === 'string') {
+    const category = categories.value.find(cat => cat.name === categoryId);
+    if (category) {
+      categoryId = category.id;
+    }
+  }
+
   return {
     id: data.id,
     name: data.name,
     description: data.description, // 添加商品描述字段
     imageUrl: data.image, // 直接传递完整的图片URL路径
-    categoryId: data.category, // 修改为categoryId以匹配后端实体类
+    categoryId: categoryId, // 确保传递的是分类ID而不是名称
     unit: data.unit,
     origin: data.origin,
     price: data.price,
@@ -698,13 +715,22 @@ async function beforeUpload(file) {
     console.log("处理后的图片URL:", dialogForm.image);
 
     ElMessage.success("图片上传成功");
+    return false; // 阻止默认上传
   } catch (error) {
     ElMessage.error("图片上传失败: " + (error.message || "未知错误"));
     console.error("上传错误:", error);
+    return false; // 阻止默认上传
   }
-  return false; // 阻止默认上传
 }
-function handleImageChange() {}
+
+function handleImageChange(file, fileList) {
+  // 当文件列表改变时更新表单验证状态
+  nextTick(() => {
+    if (dialogFormRef.value) {
+      dialogFormRef.value.validateField('image');
+    }
+  });
+}
 
 // 商品详情弹窗
 const showDetailDialog = ref(false);
