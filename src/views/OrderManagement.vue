@@ -480,9 +480,11 @@ function exportExcel() {
 }
 
 .pagination-container {
+  width: 100%;           /* 可选：占满父容器宽度，便于控制对齐 */
+  margin-left: 0px;
   margin-top: 24px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start; /* 👈 改为 flex-start 实现左对齐 */
   align-items: center;
   gap: 24px;
 }

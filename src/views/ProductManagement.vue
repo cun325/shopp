@@ -66,6 +66,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="name" label="商品名称" min-width="120" />
+      <el-table-column prop="description" label="商品描述" min-width="150" />
       <el-table-column prop="category" label="分类" width="100" />
       <el-table-column prop="unit" label="规格" width="100" />
       <el-table-column prop="origin" label="产地" width="100" />
@@ -154,6 +155,9 @@
         <el-form-item label="商品名称" prop="name">
           <el-input v-model="dialogForm.name" placeholder="请输入商品名称" />
         </el-form-item>
+        <el-form-item label="商品描述" prop="description">
+          <el-input v-model="dialogForm.description" placeholder="请输入商品描述" type="textarea" />
+        </el-form-item>
         <el-form-item label="分类" prop="category">
           <el-select v-model="dialogForm.category" placeholder="请选择分类">
             <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
@@ -215,6 +219,9 @@
       <el-descriptions :column="1" border>
         <el-descriptions-item label="商品名称">{{
             detailData.name
+          }}</el-descriptions-item>
+        <el-descriptions-item label="商品描述">{{
+            detailData.description
           }}</el-descriptions-item>
         <el-descriptions-item label="分类">{{
             detailData.category
@@ -418,7 +425,7 @@ async function fetchProducts() {
       flashSaleEndTime: item.flashSaleEndTime || null, // 特惠结束时间
       flashSaleStock: item.flashSaleStock || null, // 特惠库存
       flashSaleSoldCount: item.flashSaleSoldCount || null, // 已售数量
-      description: item.description || '',
+      description: item.description || '', // 确保商品描述字段正确处理
       taste: item.taste || '',
       nutrition: item.nutrition || '',
       suitableCrowd: item.suitableCrowd || ''
@@ -475,6 +482,7 @@ const dialogMode = ref("add"); // add | edit
 const dialogForm = reactive({
   id: null,
   name: "",
+  description: "", // 添加商品描述字段
   image: "",
   price: 0,
   stock: 0,
@@ -518,7 +526,8 @@ function openEditDialog(row) {
     ...row,
     // 确保image字段正确处理，规格回显原有值
     image: row.image,
-    unit: row.unit || "" // 回显商品原规格
+    unit: row.unit || "", // 回显商品原规格
+    description: row.description || "" // 回显商品描述
   };
 
   Object.assign(dialogForm, formData);
@@ -530,6 +539,7 @@ function resetDialog() {
   Object.assign(dialogForm, {
     id: null,
     name: "",
+    description: "", // 重置商品描述字段
     image: "",
     price: 0,
     stock: 0,
@@ -545,6 +555,7 @@ function mapToBackend(data) {
   return {
     id: data.id,
     name: data.name,
+    description: data.description, // 添加商品描述字段
     imageUrl: data.image, // 直接传递完整的图片URL路径
     category: data.category,
     unit: data.unit,
