@@ -9,9 +9,6 @@
       <el-button type="warning" :disabled="!selected.length" @click="batchToggleStatus"
       >批量上下架</el-button
       >
-      <el-button type="info" :disabled="!selected.length" @click="openFlashSaleDialog"
-      >限时特惠</el-button
-      >
       <el-button type="primary" :disabled="!selected.length" @click="batchRecommend"
       >推荐商品</el-button
       >
@@ -31,7 +28,12 @@
           @change="handleSearch"
       >
         <el-option label="全部" value="" />
-        <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+        <el-option 
+          v-for="cat in categories" 
+          :key="cat.id" 
+          :label="cat.name" 
+          :value="cat.id" 
+        />
       </el-select>
       <el-select
           v-model="filterStatus"
@@ -160,7 +162,12 @@
         </el-form-item>
         <el-form-item label="分类" prop="category">
           <el-select v-model="dialogForm.category" placeholder="请选择分类">
-            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+            <el-option 
+              v-for="cat in categories" 
+              :key="cat.id" 
+              :label="cat.name" 
+              :value="cat.id" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="规格" prop="unit">
@@ -407,11 +414,14 @@ async function fetchProducts() {
       imageUrl = item.imageUrl;
     }
 
+    
+
     return {
       id: item.id,
       name: item.name,
       image: imageUrl, // 使用处理后的代理路径
-      category: item.category,
+      category: item.category || '未知分类', // 直接使用后端返回的分类名称
+      categoryId: item.categoryId, // 保留分类ID用于编辑（如果后端返回的话）
       unit: item.unit || '',
       origin: item.origin,
       price: item.price,
@@ -557,7 +567,7 @@ function mapToBackend(data) {
     name: data.name,
     description: data.description, // 添加商品描述字段
     imageUrl: data.image, // 直接传递完整的图片URL路径
-    category: data.category,
+    categoryId: data.category, // 修改为categoryId以匹配后端实体类
     unit: data.unit,
     origin: data.origin,
     price: data.price,

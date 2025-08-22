@@ -31,6 +31,9 @@
             ¥{{ row.amount }}
           </template>
         </el-table-column>
+        <el-table-column prop="totalQuantity" label="商品数量" width="90" align="center" />
+        <el-table-column prop="receiverPhone" label="联系电话" width="110" align="center" />
+        <el-table-column prop="address" label="收货地址" min-width="180" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{row}">
             <el-tag :type="statusTagType(row.status)" size="small">{{ statusText(row.status) }}</el-tag>
@@ -179,7 +182,7 @@ const fetchOrders = async () => {
         discountAmount: item.discountAmount,
         payType: item.payType,
         payTime: item.payTime,
-        shipTime: item.shipTime,
+        shipTime: item.deliveryTime,
         receiveTime: item.receiveTime,
         createTime: item.createTime,
         updateTime: item.updateTime,

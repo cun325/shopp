@@ -27,12 +27,14 @@
       <el-table-column type="selection" width="48" />
       <el-table-column prop="orderNo" label="订单号" width="140" />
       <el-table-column prop="userName" label="用户" width="120" />
-      <el-table-column prop="phone" label="联系电话" width="120" />
       <el-table-column prop="amount" label="金额" width="100">
         <template #default="scope">
           <span>¥{{ scope.row.amount }}</span>
         </template>
       </el-table-column>
+      <el-table-column prop="totalQuantity" label="商品数量" width="90" align="center" />
+      <el-table-column prop="phone" label="联系电话" width="120" />
+      <el-table-column prop="address" label="收货地址" min-width="180" show-overflow-tooltip />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="scope">
           <el-tag 
@@ -209,12 +211,13 @@ async function loadOrders() {
           userName: order.receiverName || '未知用户',
           phone: order.receiverPhone,
           amount: order.totalAmount || order.payAmount,
+          totalQuantity: order.totalQuantity || 0,
           status: order.status === 0 ? 'pending' : order.status === 1 ? 'paid' : order.status === 2 ? 'shipped' : 'delivered',
           orderTime: order.createTime ? new Date(order.createTime).toLocaleString() : '',
           address: `${order.receiverProvince || ''}${order.receiverCity || ''}${order.receiverDistrict || ''}${order.receiverAddress || ''}`,
-          expressCompany: order.expressCompany || '',
-          expressNo: order.expressNo || '',
-          shipTime: order.shipTime ? new Date(order.shipTime).toLocaleString() : '',
+          expressCompany: order.courier || '',
+          expressNo: order.trackingNumber || '',
+          shipTime: order.deliveryTime ? new Date(order.deliveryTime).toLocaleString() : '',
           items: order.items || []
         }));
         total.value = data.total || 0;

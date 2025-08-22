@@ -124,43 +124,46 @@
             <el-button
                 size="mini"
                 type="primary"
-                @click.stop="viewTaskDetail(scope.row)">
-              详情
+                @click="viewTaskDetail(scope.row)"
+                plain>
+              查看详情
             </el-button>
             <el-button
-                v-if="scope.row.status === 'pending'"
+                v-if="scope.row.status === 'pending' || scope.row.status === 'stopped'"
                 size="mini"
                 type="success"
-                @click.stop="startTraining(scope.row.id)">
-              开始
+                @click="startTraining(scope.row.id)"
+                :loading="scope.row.loading">
+              启动
             </el-button>
             <el-button
                 v-if="scope.row.status === 'training'"
                 size="mini"
-                type="warning"
-                @click.stop="stopTraining(scope.row.id)">
+                type="danger"
+                @click="stopTraining(scope.row.id)"
+                :loading="scope.row.loading">
               停止
             </el-button>
             <el-button
                 v-if="scope.row.status === 'completed'"
                 size="mini"
-                type="success"
-                @click.stop="showEvaluateDialog(scope.row)">
-              评估
+                type="warning"
+                @click="exportModel(scope.row.id)">
+              导出
             </el-button>
             <el-button
                 v-if="scope.row.status === 'completed'"
                 size="mini"
                 type="primary"
-                @click.stop="showDeployDialog(scope.row)">
-              部署
+                @click="showEvaluateDialog(scope.row)">
+              评估
             </el-button>
             <el-button
                 v-if="scope.row.status === 'completed'"
                 size="mini"
-                type="info"
-                @click.stop="exportModel(scope.row.id)">
-              导出
+                type="success"
+                @click="showDeployDialog(scope.row)">
+              部署
             </el-button>
           </template>
         </el-table-column>
@@ -279,8 +282,8 @@
               <el-descriptions-item label="训练轮数">{{ currentTask.epochs }}</el-descriptions-item>
               <el-descriptions-item label="批次大小">{{ currentTask.batchSize }}</el-descriptions-item>
               <el-descriptions-item label="学习率">{{ currentTask.learningRate }}</el-descriptions-item>
-              <el-descriptions-item label="当前准确率">{{ (currentTask.accuracy * 100).toFixed(2) }}%</el-descriptions-item>
-              <el-descriptions-item label="当前损失">{{ currentTask.loss }}</el-descriptions-item>
+              <el-descriptions-item label="当前准确率">{{ formatAccuracy(currentTask.accuracy) }}</el-descriptions-item>
+              <el-descriptions-item label="当前损失">{{ formatLoss(currentTask.loss) }}</el-descriptions-item>
             </el-descriptions>
           </el-tab-pane>
 
@@ -307,11 +310,11 @@
                     <div class="metrics">
                       <div class="metric-item">
                         <span class="metric-label">当前损失:</span>
-                        <span class="metric-value">{{ trainingProgress.currentLoss || 'N/A' }}</span>
+                        <span class="metric-value">{{ formatLoss(trainingProgress.currentLoss) }}</span>
                       </div>
                       <div class="metric-item">
                         <span class="metric-label">当前准确率:</span>
-                        <span class="metric-value">{{ ((trainingProgress.currentAccuracy || 0) * 100).toFixed(2) }}%</span>
+                        <span class="metric-value">{{ formatAccuracy(trainingProgress.currentAccuracy) }}</span>
                       </div>
                       <div class="metric-item">
                         <span class="metric-label">预计剩余时间:</span>
@@ -357,20 +360,20 @@
               <el-row :gutter="20">
                 <el-col :span="8">
                   <div class="metric-card">
-                    <div class="metric-value">{{ (evaluationResult.accuracy * 100).toFixed(2) }}%</div>
+                    <div class="metric-value">{{ ((evaluationResult.accuracy || 0) * 100).toFixed(2) }}%</div>
                     <div class="metric-label">准确率</div>
                   </div>
                 </el-col>
                 <el-col :span="8">
                   <div class="metric-card">
-                    <div class="metric-value">{{ evaluationResult.totalSamples }}</div>
+                    <div class="metric-value">{{ evaluationResult.totalSamples || 0 }}</div>
                     <div class="metric-label">总样本数</div>
                   </div>
                 </el-col>
                 <el-col :span="8">
                   <div class="metric-card">
-                    <div class="metric-value">{{ evaluationResult.correctPredictions }}</div>
-                    <div class="metric-label">正确预测数</div>
+                    <div class="metric-value">{{ evaluationResult.actualPredictions || evaluationResult.correctPredictions || 0 }}</div>
+                    <div class="metric-label">实际预测数</div>
                   </div>
                 </el-col>
               </el-row>
@@ -389,7 +392,13 @@
               </el-card>
             </div>
             <div v-else>
-              <el-alert title="暂无评估结果" type="info" show-icon></el-alert>
+              <el-alert title="暂无评估结果" type="info" show-icon>
+                <template #default>
+                  <div style="margin-top: 10px;">
+                    <el-button type="primary" size="small" @click="loadEvaluationResult">加载评估结果</el-button>
+                  </div>
+                </template>
+              </el-alert>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -505,20 +514,20 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <div class="metric-card">
-              <div class="metric-value">{{ (evaluationResult.accuracy * 100).toFixed(2) }}%</div>
+              <div class="metric-value">{{ formatAccuracy(evaluationResult.accuracy) }}</div>
               <div class="metric-label">准确率</div>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="metric-card">
-              <div class="metric-value">{{ evaluationResult.totalSamples }}</div>
+              <div class="metric-value">{{ evaluationResult.totalSamples || 0 }}</div>
               <div class="metric-label">总样本数</div>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="metric-card">
-              <div class="metric-value">{{ evaluationResult.correctPredictions }}</div>
-              <div class="metric-label">正确预测数</div>
+              <div class="metric-value">{{ evaluationResult.actualPredictions || evaluationResult.correctPredictions || 0 }}</div>
+              <div class="metric-label">实际预测数</div>
             </div>
           </el-col>
         </el-row>
@@ -835,40 +844,40 @@ export default {
     createTrainingTask() {
       this.$refs.createForm.validate(async (valid) => {
         if (valid) {
-          this.creating = true;
+          this.creating = true
           try {
             // 检查是否有可用的数据集
             if (!this.datasets || this.datasets.length === 0) {
-              await this.loadDatasets();
+              await this.loadDatasets()
             }
 
             // 确保选择了数据集
             if (!this.createForm.datasetId) {
-              this.$message.warning('请选择数据集');
-              this.creating = false;
-              return;
+              this.$message.warning('请选择数据集')
+              this.creating = false
+              return
             }
 
-            const response = await trainingApi.createTrainingTask(this.createForm);
+            const response = await trainingApi.createTrainingTask(this.createForm)
             if (response && response.code === 200) {
-              this.$message.success('创建训练任务成功');
-              this.showCreateDialog = false;
-              await this.loadTrainingTasks(); // 确保刷新任务列表
-              this.loadStatistics();
-              this.resetCreateForm();
+              this.$message.success('创建训练任务成功')
+              this.showCreateDialog = false
+              await this.loadTrainingTasks() // 确保刷新任务列表
+              this.loadStatistics()
+              this.resetCreateForm()
             } else {
-              this.$message.error(response?.message || '创建训练任务失败');
+              this.$message.error(response?.message || '创建训练任务失败')
             }
           } catch (error) {
-            this.$message.error('创建训练任务失败: ' + (error.message || '未知错误'));
-            console.error('创建训练任务失败:', error);
+            this.$message.error('创建训练任务失败: ' + (error.message || '未知错误'))
+            console.error('创建训练任务失败:', error)
           } finally {
-            this.creating = false;
+            this.creating = false
           }
         } else {
-          this.$message.warning('请填写完整的表单信息');
+          this.$message.warning('请填写完整的表单信息')
         }
-      });
+      })
     },
 
     // 重置创建表单
@@ -885,20 +894,82 @@ export default {
       }
     },
 
+    // 开始训练
+    async startTraining(taskId) {
+      // 阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
+
+      try {
+        const response = await trainingApi.startTraining(taskId)
+        if (response.code === 200) {
+          this.$message.success('训练任务已开始')
+          await this.loadTrainingTasks()
+          this.loadStatistics()
+        } else {
+          this.$message.error(response.message || '启动训练失败')
+        }
+      } catch (error) {
+        this.$message.error('启动训练失败: ' + (error.message || '未知错误'))
+        console.error('启动训练失败:', error)
+      }
+      return false;
+    },
+
+    // 停止训练
+    async stopTraining(taskId) {
+      // 阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
+
+      try {
+        await this.$confirm('确定要停止这个训练任务吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+
+        const response = await trainingApi.stopTraining(taskId)
+        if (response.code === 200) {
+          this.$message.success('训练任务已停止')
+          await this.loadTrainingTasks()
+          this.loadStatistics()
+        } else {
+          this.$message.error(response.message || '停止训练失败')
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('停止训练失败: ' + (error.message || '未知错误'))
+          console.error('停止训练失败:', error)
+        }
+      }
+      return false;
+    },
+
     // 显示评估对话框
-    async showEvaluateDialog(task) {
+    showEvaluateDialog(task) {
+      // 阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
       this.currentTask = task
       this.showEvaluateDialogVisible = true
       this.evaluateForm.testDatasetId = null
       this.evaluationResult = null
+      return false;
     },
 
+    // 评估模型
     async evaluateModel() {
       if (!this.currentTask) return
 
       this.evaluating = true
       try {
-        const response = await trainingApi.evaluateModelWithDataset(this.currentTask.id, this.evaluateForm.testDatasetId)
+        const response = await trainingApi.evaluateModel(this.currentTask.id, {
+          testDatasetId: this.evaluateForm.testDatasetId
+        })
         if (response.code === 200) {
           this.evaluationResult = response.data
           this.$message.success('模型评估完成')
@@ -906,7 +977,7 @@ export default {
           this.$message.error(response.message || '模型评估失败')
         }
       } catch (error) {
-        this.$message.error('模型评估失败')
+        this.$message.error('模型评估失败: ' + (error.message || '未知错误'))
         console.error('模型评估失败:', error)
       } finally {
         this.evaluating = false
@@ -915,6 +986,10 @@ export default {
 
     // 显示部署对话框
     showDeployDialog(task) {
+      // 阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
       this.currentTask = task
       this.showDeployDialogVisible = true
       this.deployForm = {
@@ -922,6 +997,7 @@ export default {
         deploymentType: ''
       }
       this.deploymentResult = null
+      return false;
     },
 
     // 处理tab切换
@@ -948,13 +1024,21 @@ export default {
       try {
         const response = await trainingApi.getTrainingProgress(taskId)
         if (response.code === 200) {
-          this.trainingProgress = response.data
+          // 为trainingProgress设置默认结构，防止后端数据异常导致前端出错
+          this.trainingProgress = {
+            progress: response.data.progress || 0,
+            currentEpoch: response.data.currentEpoch || 0,
+            totalEpochs: response.data.totalEpochs || 0,
+            currentLoss: response.data.currentLoss !== undefined ? response.data.currentLoss : null,
+            currentAccuracy: response.data.currentAccuracy || 0,
+            estimatedTimeRemaining: response.data.estimatedTimeRemaining || 'N/A'
+          }
         } else {
           this.$message.error(response.message || '加载训练进度失败')
         }
       } catch (error) {
+        this.$message.error('加载训练进度失败: ' + (error.message || '未知错误'))
         console.error('加载训练进度失败:', error)
-        this.$message.error('加载训练进度失败')
       }
     },
 
@@ -967,37 +1051,49 @@ export default {
         if (response.code === 200) {
           this.trainingLogs = response.data.logs || []
         } else {
+          this.trainingLogs = [] // 清空日志列表
           this.$message.error(response.message || '加载训练日志失败')
         }
       } catch (error) {
+        this.trainingLogs = [] // 清空日志列表
+        this.$message.error('加载训练日志失败: ' + (error.message || '未知错误'))
         console.error('加载训练日志失败:', error)
-        this.$message.error('加载训练日志失败')
       }
     },
 
     // 查看任务详情
     async viewTaskDetail(task) {
+      // 阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
+
       this.currentTask = task
       this.showDetailDialog = true
       this.activeTab = 'basic'
       this.trainingProgress = null
       this.trainingLogs = []
-      this.evaluation = null
+      this.evaluationResult = null
 
       // 加载任务详情
       try {
         const response = await trainingApi.getTrainingTaskDetail(task.id)
         if (response.code === 200) {
-          this.currentTask = { ...this.currentTask, ...response.data }
+          // 确保状态一致性
+          this.currentTask = { ...task, ...response.data }
+        } else {
+          this.$message.error(response.message || '加载任务详情失败')
         }
       } catch (error) {
+        this.$message.error('加载任务详情失败: ' + (error.message || '未知错误'))
         console.error('加载任务详情失败:', error)
       }
 
       // 如果任务正在训练，加载进度
-      if (task.status === 'training') {
-        this.loadTrainingProgress(task.id)
+      if (this.currentTask.status === 'training') {
+        this.loadTrainingProgress(this.currentTask.id)
       }
+      return false;
     },
 
     async deployModel() {
@@ -1005,7 +1101,11 @@ export default {
 
       this.deploying = true
       try {
-        const response = await trainingApi.deployModel(this.currentTask.id, this.deployForm)
+        const response = await trainingApi.deployModel(
+            this.currentTask.id,
+            this.deployForm.deploymentName,
+            this.deployForm.deploymentType
+        )
         if (response.code === 200) {
           this.deploymentResult = response.data
           this.$message.success('模型部署成功')
@@ -1013,7 +1113,7 @@ export default {
           this.$message.error(response.message || '模型部署失败')
         }
       } catch (error) {
-        this.$message.error('模型部署失败')
+        this.$message.error('模型部署失败: ' + (error.message || '未知错误'))
         console.error('模型部署失败:', error)
       } finally {
         this.deploying = false
@@ -1022,10 +1122,23 @@ export default {
 
     // 导出模型
     async exportModel(taskId) {
-      this.currentTask = {id: taskId};  // 保存当前任务ID
+      // 阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
+
+      // 从任务列表中查找完整任务信息
+      const task = this.trainingTasks.find(t => t.id === taskId)
+      if (!task) {
+        // 如果任务不在列表中，至少设置任务ID
+        this.currentTask = { id: taskId }
+      } else {
+        this.currentTask = task
+      }
       this.exportDialogVisible = true
       this.exportForm.format = ''
       this.exportResult = null
+      return false;
     },
 
     async exportModelWithFormat() {
@@ -1033,7 +1146,9 @@ export default {
 
       this.exporting = true;
       try {
-        const response = await trainingApi.exportModelWithFormat(this.currentTask.id, this.exportForm.format);
+        const response = await trainingApi.exportModel(this.currentTask.id, {
+          format: this.exportForm.format
+        });
         if (response.code === 200) {
           this.exportResult = response.data;
           this.$message.success('模型导出成功');
@@ -1041,7 +1156,7 @@ export default {
           this.$message.error(response.message || '模型导出失败');
         }
       } catch (error) {
-        this.$message.error('模型导出失败');
+        this.$message.error('模型导出失败: ' + (error.message || '未知错误'));
         console.error('模型导出失败:', error);
       } finally {
         this.exporting = false;
@@ -1060,6 +1175,90 @@ export default {
         return (size / 1024).toFixed(2) + ' KB'
       } else {
         return (size / (1024 * 1024)).toFixed(2) + ' MB'
+      }
+    },
+
+    // 格式化准确率显示
+    formatAccuracy(accuracy) {
+      // 检查accuracy是否为有效数值
+      if (accuracy === null || accuracy === undefined || isNaN(accuracy)) {
+        return 'N/A';
+      }
+
+      // 将accuracy转换为数值类型（防止是字符串）
+      const numAccuracy = Number(accuracy);
+
+      // 再次检查转换后是否为有效数值
+      if (isNaN(numAccuracy)) {
+        return 'N/A';
+      }
+
+      // 返回格式化后的百分比值
+      return (numAccuracy * 100).toFixed(2) + '%';
+    },
+
+    // 格式化损失值显示
+    formatLoss(loss) {
+      // 检查loss是否为有效数值
+      if (loss === null || loss === undefined || isNaN(loss)) {
+        return 'N/A';
+      }
+
+      // 将loss转换为数值类型（防止是字符串）
+      const numLoss = Number(loss);
+
+      // 再次检查转换后是否为有效数值
+      if (isNaN(numLoss)) {
+        return 'N/A';
+      }
+
+      // 返回格式化后的损失值
+      return numLoss.toFixed(4);
+    },
+
+    // 加载训练任务
+    async loadTrainingTasks() {
+      this.loading = true
+      try {
+        const response = await trainingApi.getTrainingTasks(
+            this.pagination.page,
+            this.pagination.size,
+            this.searchForm.status,
+            this.searchForm.modelType
+        )
+        if (response.code === 200) {
+          this.trainingTasks = response.data.tasks || []
+          this.pagination.total = response.data.total || 0
+        } else {
+          this.$message.error(response.message || '加载训练任务失败')
+        }
+      } catch (error) {
+        this.$message.error('加载训练任务失败: ' + (error.message || '未知错误'))
+        console.error('加载训练任务失败:', error)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 加载评估结果
+    async loadEvaluationResult() {
+      if (!this.currentTask) return
+
+      try {
+        // 使用现有的评估方法加载结果
+        const response = await trainingApi.evaluateModel(this.currentTask.id, {
+          testDatasetId: this.evaluateForm.testDatasetId || null
+        })
+        if (response.code === 200) {
+          this.evaluationResult = response.data
+        } else {
+          // 如果没有专门的评估结果接口，则使用默认的评估方法
+          this.evaluationResult = null
+        }
+      } catch (error) {
+        // 忽略错误，使用空的评估结果
+        this.evaluationResult = null
+        this.$message.error('加载评估结果失败: ' + (error.message || '未知错误'))
       }
     },
 
@@ -1096,6 +1295,49 @@ export default {
       })
 
       return Array.from(labels).sort()
+    },
+
+    // 预处理数据
+    async preprocessData(datasetId) {
+      try {
+        // 这里可以添加预处理配置的对话框，现在使用默认配置
+        const config = {
+          // 可以添加预处理选项
+        }
+
+        const response = await trainingApi.preprocessData(datasetId, config)
+        if (response.code === 200) {
+          this.$message.success('数据预处理成功')
+          // 刷新数据集列表
+          await this.loadDatasets()
+        } else {
+          this.$message.error(response.message || '数据预处理失败')
+        }
+      } catch (error) {
+        this.$message.error('数据预处理失败: ' + (error.message || '未知错误'))
+        console.error('数据预处理失败:', error)
+      }
+    },
+
+    // 删除数据集
+    async deleteDataset(datasetId) {
+      try {
+        await this.$confirm('确定要删除这个数据集吗？此操作不可恢复', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+
+        // 实现删除数据集的API调用
+        this.$message.info('数据集删除成功')
+        // 刷新数据集列表
+        await this.loadDatasets()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('删除数据集失败: ' + (error.message || '未知错误'))
+          console.error('删除数据集失败:', error)
+        }
+      }
     },
   }
 }

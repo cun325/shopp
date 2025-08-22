@@ -154,11 +154,20 @@ export const trainingApi = {
   // 评估模型
   evaluateModelWithDataset(taskId, testDatasetId) {
     return request({
-      url: `/admin/training/tasks/${taskId}/evaluate`,
+      url: `/admin/training/tasks/${taskId}/evaluate-with-dataset`,
       method: 'post',
-      params: {
-        testDatasetId
+      data: {
+        testDatasetId: testDatasetId
       }
+    })
+  },
+
+  // 模型预测
+  predictWithModel(taskId, input) {
+    return request({
+      url: `/admin/training/tasks/${taskId}/predict`,
+      method: 'post',
+      data: input
     })
   },
 

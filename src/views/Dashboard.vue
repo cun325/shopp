@@ -188,10 +188,10 @@ const getDashboardStatistics = async () => {
       const data = response.data.data;
       if (data) {
         statCards.value = [
-          { title: "今日销售额", value: `¥${data.todayRevenue || 0}`, rate: 12.5 },
-          { title: "订单总量", value: (data.totalOrders || 0).toString(), rate: 8.2 },
-          { title: "待处理订单", value: (data.pendingOrders || 0).toString(), rate: -2.8 },
-          { title: "库存不足商品", value: (data.lowStockProducts || 0).toString(), rate: 4.6 },
+          { title: "今日销售额", value: `¥${(data.todayRevenue || 0).toFixed(2)}`, rate: 12.5 },
+          { title: "订单总量", value: (data.totalOrders || 0).toLocaleString(), rate: 8.2 },
+          { title: "待处理订单", value: (data.pendingOrders || 0).toLocaleString(), rate: -2.8 },
+          { title: "库存不足商品", value: (data.lowStockProducts || 0).toLocaleString(), rate: 4.6 },
         ];
         console.log('Dashboard data updated successfully:', statCards.value);
       } else {
