@@ -33,8 +33,8 @@
         </el-table-column>
         <el-table-column prop="totalQuantity" label="商品数量" width="90" align="center" />
         <el-table-column prop="receiverPhone" label="联系电话" width="110" align="center" />
-        <el-table-column prop="address" label="收货地址" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="address" label="收货地址" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="140" align="center">
           <template #default="{row}">
             <el-tag :type="statusTagType(row.status)" size="small">{{ statusText(row.status) }}</el-tag>
           </template>
@@ -301,7 +301,7 @@ function statusText(status) {
     2: '已发货',
     3: '已完成'
   };
-  return map[status] || '未知状态';
+  return map[status] || '用户取消订单';
 }
 
 function statusTagType(status) {
