@@ -57,23 +57,18 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <div class="pagination-info">Total {{ total }}</div>
-        <div class="pagination-select">
-          <span>{{ pageSize }}/page</span>
-          <el-select v-model="pageSize" style="width: 80px" @change="handleSizeChange">
-            <el-option :value="5" label="5/page" />
-            <el-option :value="10" label="10/page" />
-            <el-option :value="20" label="20/page" />
-            <el-option :value="50" label="50/page" />
-          </el-select>
-        </div>
         <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="total"
-          layout="prev, pager, next, jumper"
-          @current-change="handlePageChange"
-          background
+            class="category-pagination"
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-size="pageSize"
+            :page-sizes="[5, 10, 20, 50]"
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            @current-change="handlePageChange"
+            @size-change="handleSizeChange"
+            style="margin-top: 18px"
         />
       </div>
     </div>

@@ -71,25 +71,25 @@ export function getSalesTrend(params) {
 // }
 
 // 获取发货效率数据
-export function getDeliveryEfficiency() {
-  return request({
-    url: '/admin/dashboard/delivery-efficiency',
-    method: 'get'
-  });
-}
+// export function getDeliveryEfficiency() {
+//   return request({
+//     url: '/admin/dashboard/delivery-efficiency',
+//     method: 'get'
+//   });
+// }
 
 // 获取推广效果数据
-export function getPromotionEffect() {
-  return request({
-    url: '/admin/dashboard/promotion-effect',
-    method: 'get'
-  });
-}
+// export function getPromotionEffect() {
+//   return request({
+//     url: '/admin/dashboard/promotion-effect',
+//     method: 'get'
+//   });
+// }
 
 // 获取延迟发货原因数据
-export function getDelayReasons() {
-  return request({
-    url: '/admin/dashboard/delay-reasons',
-    method: 'get'
-  });
-}
+// export function getDelayReasons() {
+//   return request({
+//     url: '/admin/dashboard/delay-reasons',
+//     method: 'get'
+//   });
+// }
