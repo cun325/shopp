@@ -56,21 +56,36 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-            class="category-pagination"
-            background
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="total"
-            :page-size="pageSize"
-            :page-sizes="[5, 10, 20, 50]"
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            @current-change="handlePageChange"
-            @size-change="handleSizeChange"
-            style="margin-top: 18px"
-        />
-      </div>
+<!--      -->
+<!--      <div class="pagination-container">-->
+<!--        <el-pagination-->
+<!--            class="category-pagination"-->
+<!--            background-->
+<!--            layout="total, sizes, prev, pager, next, jumper"-->
+<!--            :total="total"-->
+<!--            :page-size="pageSize"-->
+<!--            :page-sizes="[5, 10, 20, 50]"-->
+<!--            v-model:current-page="currentPage"-->
+<!--            v-model:page-size="pageSize"-->
+<!--            @current-change="handlePageChange"-->
+<!--            @size-change="handleSizeChange"-->
+<!--            style="margin-top: 18px"-->
+<!--        />-->
+<!--      </div>-->
+
+      <el-pagination
+          class="category-pagination"
+          background
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :page-sizes="[5, 10, 20, 50]"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+          style="margin-top: 18px"
+      />
     </div>
 
     <!-- 订单详情弹窗 -->
@@ -146,7 +161,12 @@ const fetchOrders = async () => {
       search: search.value,
       status: filterStatus.value
     };
-    
+    // 分页事件处理
+    function handlePageChange() {
+      loadCategories();
+    };
+
+
     // 添加日期范围参数
     if (dateRange.value && dateRange.value.length === 2) {
       params.startDate = dateRange.value[0];

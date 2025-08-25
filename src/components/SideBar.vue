@@ -80,12 +80,12 @@ export default {
         //   text: "系统消息通知管理",
         //   route: "/index/message-template",
         // },
-        {
-          name: "系统消息通知管理",
-          icon: "📤",
-          text: "系统消息通知管理",
-          route: "/index/message-sending",
-        },
+        // {
+        //   name: "系统消息通知管理",
+        //   icon: "📤",
+        //   text: "系统消息通知管理",
+        //   route: "/index/message-sending",
+        // },
         // {
         //   name: "AI模型管理",
         //   icon: "🤖",
